@@ -1,0 +1,10 @@
+https://www.element14.com/community/groups/open-source-hardware/blog/2017/12/31/experimenting-with-e-paper-displays-building-a-clock
+https://www.amazon.com.au/Waveshare-Module-Resolution-Electronic-interface/dp/B071LGVVL1
+https://www.ebay.com.au/itm/2-13-inch-3-colour-premium-e-Paper-HAT-for-Raspberry-and-Arduino-AU-Stock/332908632121?hash=item4d82e69839:g:xSgAAOSw~T9b~kNl:rk:1:pf:1&frcectupt=true
+https://www.ebay.com.au/itm/3-Color-ePaper-Display-1-54/333030000777
+https://www.ebay.com.au/itm/202373108460
+https://www.ebay.com.au/itm/Mini-Laptop-Speaker-Module-DIY-Electronic-Components-8-ohm-1W-with-wire-Small/232402768961?ssPageName=STRK%3AMEBIDX%3AIT&_trksid=p2060353.m2749.l2649
+http://rcarduino.blogspot.com/2012/08/adding-audio-to-arduino-projects.html
+https://www.microchip.com/wwwproducts/en/ATmega328p
+https://www.pololu.com/docs/0J36/4.b
+https://www.jaycar.com.au/arduino-compatible-usb-to-serial-adaptor-module/p/XC4464
