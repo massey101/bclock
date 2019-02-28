@@ -12,7 +12,8 @@ void st7735_draw_char(
     const GFXglyph *glyph,
     const GFXfont *font,
     uint8_t size,
-    uint16_t color
+    uint16_t color,
+    uint16_t back_color
 ) {
     if (size < 1) {
         return;
@@ -24,6 +25,7 @@ void st7735_draw_char(
     uint16_t bo = glyph->bitmapOffset;
     uint8_t bits = 0, bit = 0;
     uint16_t set_pixels = 0;
+    uint16_t set_pixels_background = 0;
 
     uint8_t cur_x, cur_y;
     for (cur_y = 0; cur_y < glyph->height; cur_y++) {
@@ -35,15 +37,28 @@ void st7735_draw_char(
 
             if (bits & bit) {
                 set_pixels++;
-            } else if (set_pixels > 0) {
-                st7735_fill_rect(
-                    x + (glyph->xOffset + cur_x-set_pixels) * size,
-                    y + (glyph->yOffset+cur_y) * size,
-                    size * set_pixels,
-                    size,
-                    color
-                );
-                set_pixels=0;
+                if (set_pixels_background > 0) {
+                    st7735_fill_rect(
+                        x + (glyph->xOffset + cur_x - set_pixels_background) * size,
+                        y + (glyph->yOffset + cur_y) * size,
+                        size * set_pixels_background,
+                        size,
+                        back_color
+                    );
+                    set_pixels_background = 0;
+                }
+            } else {
+                set_pixels_background++;
+                if (set_pixels > 0) {
+                    st7735_fill_rect(
+                        x + (glyph->xOffset + cur_x - set_pixels) * size,
+                        y + (glyph->yOffset + cur_y) * size,
+                        size * set_pixels,
+                        size,
+                        color
+                    );
+                    set_pixels = 0;
+                }
             }
 
             bit >>= 1;
@@ -52,13 +67,24 @@ void st7735_draw_char(
         // Draw rest of line
         if (set_pixels > 0) {
             st7735_fill_rect(
-               x + (glyph->xOffset + cur_x-set_pixels) * size,
+               x + (glyph->xOffset + cur_x - set_pixels) * size,
                y + (glyph->yOffset + cur_y) * size,
                size * set_pixels,
                size,
                color
             );
-            set_pixels=0;
+            set_pixels = 0;
+        }
+
+        if (set_pixels_background > 0) {
+            st7735_fill_rect(
+               x + (glyph->xOffset + cur_x - set_pixels_background) * size,
+               y + (glyph->yOffset + cur_y) * size,
+               size * set_pixels_background,
+               size,
+               back_color
+            );
+            set_pixels_background = 0;
         }
     }
 }
@@ -70,7 +96,8 @@ void st7735_draw_text(
     char *text,
     const GFXfont *p_font,
     uint8_t size,
-    uint16_t color
+    uint16_t color,
+    uint16_t back_color
 ) {
     int16_t cursor_x = x;
     int16_t cursor_y = y;
@@ -89,7 +116,7 @@ void st7735_draw_text(
             GFXglyph glyph;
             memcpy_P(&glyph, &font.glyph[c - font.first], sizeof(GFXglyph));
 
-            st7735_draw_char(cursor_x, cursor_y, &glyph, &font, size, color);
+            st7735_draw_char(cursor_x, cursor_y, &glyph, &font, size, color, back_color);
             cursor_x += glyph.xAdvance * size;
         }
     }

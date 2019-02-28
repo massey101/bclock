@@ -26,7 +26,8 @@ void st7735_draw_text(
     char *text,
     const GFXfont *p_font,
     uint8_t size,
-    uint16_t color
+    uint16_t color,
+    uint16_t back_color
 );
 
 #endif

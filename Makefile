@@ -25,9 +25,9 @@ OBJ = obj
 MKDIR_P = mkdir -p
 
 # Source
-OBJS = $(OBJ)/main.o $(OBJ)/uart.o $(OBJ)/st7735.o $(OBJ)/spi.o $(OBJ)/st7735_font.o $(OBJ)/st7735_gfx.o
+OBJS = $(OBJ)/main.o $(OBJ)/uart.o $(OBJ)/st7735.o $(OBJ)/spi.o $(OBJ)/st7735_font.o $(OBJ)/st7735_gfx.o $(OBJ)/ds3231.o $(OBJ)/twi.o
 LIB =
-DEPS = $(SRC)/uart.h $(SRC)/st7735.h $(SRC)/spi.h $(SRC)/st7735_font.h $(SRC)/st7735_gfx.h $(SRC)/st7735initcmds.h $(SRC)/fonts/free_sans.h $(SRC)/fonts/tom_thumb.h
+DEPS = $(SRC)/uart.h $(SRC)/st7735.h $(SRC)/spi.h $(SRC)/st7735_font.h $(SRC)/st7735_gfx.h $(SRC)/st7735initcmds.h $(SRC)/fonts/free_sans.h $(SRC)/fonts/tom_thumb.h $(SRC)/ds3231.h $(SRC)/twi.h
 
 # Output
 HEX = $(BIN)/$(PROJ).hex
