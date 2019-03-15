@@ -25,7 +25,7 @@ OBJ = obj
 MKDIR_P = mkdir -p
 
 # Source
-OBJS = $(OBJ)/main.o $(OBJ)/uart.o $(OBJ)/ds3231.o $(OBJ)/twi.o $(OBJ)/epd2in13b.o $(OBJ)/epdif.o $(OBJ)/epdpaint.o $(OBJ)/font24.o
+OBJS = $(OBJ)/main.o $(OBJ)/uart.o $(OBJ)/ds3231.o $(OBJ)/twi.o $(OBJ)/epd2in13b.o $(OBJ)/epdif.o $(OBJ)/epdpaint.o $(OBJ)/DejaVuSansMono48.o $(OBJ)/DejaVuSansMono24.o
 LIB =
 DEPS = $(SRC)/uart.h $(SRC)/ds3231.h $(SRC)/twi.h $(SRC)/epd2in13b.h $(SRC)/epdif.h $(SRC)/epdpaint.h $(SRC)/fonts.h
 
