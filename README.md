@@ -11,6 +11,15 @@ Goals:
   * No annoying lights that make it difficult to sleep.
   * Be cool
 
+## Dependencies
+
+  * avr-gcc
+    - avr-binutils
+  * avr-libc
+  * avr-libc-doc
+  * avrdude
+    - libftdi
+
 ## Authors
 
 Jack Massey (jacknmassey@gmail.com)
