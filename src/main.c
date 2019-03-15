@@ -132,7 +132,7 @@ void show_time(struct epd * epd, struct paint * paint, datetime_t * datetime) {
     paint_SetWidth(paint, 40);
     paint_SetHeight(paint, 200);
     paint_Clear(paint, UNCOLORED);
-    paint_DrawStringAt(paint, 0, 0, time_text, &DejaVuSansMono48, COLORED);
+    paint_DrawStringAt(paint, 0, 0, time_text, &FreeMono48, COLORED);
     epd_set_partial_window_black(
         epd,
         paint_GetImage(paint),
@@ -142,7 +142,7 @@ void show_time(struct epd * epd, struct paint * paint, datetime_t * datetime) {
         paint_GetHeight(paint)
     );
     paint_Clear(paint, UNCOLORED);
-    paint_DrawStringAt(paint, 0, 0, date_text, &DejaVuSansMono24, COLORED);
+    paint_DrawStringAt(paint, 0, 0, date_text, &FreeMono24, COLORED);
     epd_set_partial_window_black(
         epd,
         paint_GetImage(paint),
