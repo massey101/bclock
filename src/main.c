@@ -4,16 +4,17 @@
 #include <stdint.h>
 #include <avr/io.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "uart.h"
-#include "spi.h"
-#include "st7735.h"
-#include "st7735_gfx.h"
-#include "st7735_font.h"
+#include "epd2in13b.h"
+#include "epdpaint.h"
 #include "ds3231.h"
 
-#include "fonts/tom_thumb.h"
 
+
+#define COLORED   0
+#define UNCOLORED 1
 
 uint8_t BCDtoDEC(uint8_t bcd_val) {
     return (((bcd_val >> 4) * 10) + (bcd_val & 0x0F));
@@ -112,15 +113,14 @@ void set_date() {
     ds3231_set(&date);
 }
 
-void show_time(datetime_t * datetime) {
+void show_time(struct epd * epd, struct paint * paint, datetime_t * datetime) {
     char time_text[16];
     char date_text[16];
     sprintf(
         time_text,
-        "%02u:%02u:%02u",
+        "%02u:%02u",
         datetime->hours,
-        datetime->minutes,
-        datetime->seconds
+        datetime->minutes
     );
     sprintf(
         date_text,
@@ -129,49 +129,70 @@ void show_time(datetime_t * datetime) {
         datetime->month,
         datetime->year
     );
-    //st7735_fill_rect(0, 0, 128, 128, ST7735_COLOR_WHITE);
-    st7735_draw_text(
-        5,
-        25,
-        time_text,
-        &TomThumb,
-        4,
-        ST7735_COLOR_BLACK,
-        ST7735_COLOR_WHITE
+    paint_SetWidth(paint, 24);
+    paint_SetHeight(paint, 200);
+    paint_Clear(paint, UNCOLORED);
+    paint_DrawStringAt(paint, 0, 0, time_text, &Font24, COLORED);
+    epd_set_partial_window_black(
+        epd,
+        paint_GetImage(paint),
+        epd->width - paint->width-2,
+        8,
+        paint_GetWidth(paint),
+        paint_GetHeight(paint)
     );
-    st7735_draw_text(
-        5,
-        50,
-        date_text,
-        &TomThumb,
-        3,
-        ST7735_COLOR_BLACK,
-        ST7735_COLOR_WHITE
+    paint_Clear(paint, UNCOLORED);
+    paint_DrawStringAt(paint, 0, 0, date_text, &Font24, COLORED);
+    epd_set_partial_window_black(
+        epd,
+        paint_GetImage(paint),
+        epd->width - paint->width-30,
+        8,
+        paint_GetWidth(paint),
+        paint_GetHeight(paint)
     );
+
+    epd_display_frame(epd);
 }
 
 
 int main(void)
 {
+    datetime_t last_date = {0};
     datetime_t date;
+    unsigned char canvas[1024];
+    struct epd epd;
+    struct paint paint;
 
     /* init */
-    spi_init();
-    ds3231_init();
-    st7735_init();
-    st7735_set_orientation(ST7735_LANDSCAPE);
     uart_init(38400);
+    ds3231_init();
+    epd_init(&epd);
+    paint_init(&paint, canvas, 0, 0);
     stdout = &uart_stdout;
     stdin = &uart_input;
 
+    paint_SetRotate(&paint, ROTATE_90);
+
     // Reset with all white
-    st7735_fill_rect(0, 0, 128, 128, ST7735_COLOR_WHITE);
+    epd_clear_frame_memory(&epd);
 #ifdef RESET_DATE
     set_date();
 #endif
 
     while(1) {
         ds3231_get(&date);
+        if (
+            date.year != last_date.year || \
+            date.month != last_date.month || \
+            date.day != last_date.day || \
+            date.hours != last_date.hours || \
+            date.minutes != last_date.minutes
+        ) {
+            show_time(&epd, &paint, &date);
+            memcpy(&last_date, &date, sizeof(date));
+        }
+
         printf(
             "%02u:%02u:%02u %04u-%02u-%02u\n",
             date.hours,
@@ -181,7 +202,6 @@ int main(void)
             date.month,
             date.day
         );
-        show_time(&date);
 
         _delay_ms(1000);
     }
