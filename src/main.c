@@ -166,8 +166,9 @@ int main(void)
 
     // Reset with all white
     st7735_fill_rect(0, 0, 128, 128, ST7735_COLOR_WHITE);
+#ifdef RESET_DATE
     set_date();
-
+#endif
 
     while(1) {
         ds3231_get(&date);
