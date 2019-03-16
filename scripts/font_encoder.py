@@ -6,26 +6,13 @@ import os
 from PIL import Image, ImageFont, ImageDraw
 
 
-def convert_glyffs(font, glyffs, w, h):
+def convert_glyff(font, glyff, w, h):
 
-    canvas = Image.new('1', (w*len(glyffs), h), 'white')
+    canvas = Image.new('1', (w, h), 'white')
 
     draw = ImageDraw.Draw(canvas)
-    draw.text((0, 0), ''.join(glyffs), 'black', font)
-    px = canvas.load()
-    output = {}
-    x_offset = 0
-    for glyff in glyffs:
-        rows = []
-        for y in range(h):
-            columns = []
-            for x in range(w):
-                columns.append(px[x + x_offset, y])
-            rows.append(columns)
-        output[glyff] = rows
-        x_offset += w
-
-    return output
+    draw.text((0, 0), glyff, 'black', font)
+    return canvas.load()
 
 
 def to_hash_format(px, w, h):
@@ -33,7 +20,7 @@ def to_hash_format(px, w, h):
     for y in range(h):
         row = []
         for x in range(w):
-            if px[y][x]:
+            if px[x, y]:
                 row.append(' ')
             else:
                 row.append('#')
@@ -48,7 +35,7 @@ def to_hex_format(px, w, h):
     for y in range(h):
         row = [0] * hex_width
         for x in range(w):
-            if not px[y][x]:
+            if not px[x, y]:
                 row[math.floor(x / 8)] |= 1 << (7 - (x % 8))
         output.append(row)
 
@@ -74,7 +61,6 @@ def generate_header(font, glyphs, name):
     text = ''.join(glyphs)
     text_width, text_height = font.getsize(text)
     text_width = int(text_width / len(glyphs))
-    converted_glyffs = convert_glyffs(font, glyphs, text_width, text_height)
 
     output += '#include "fonts.h"\n'
     output += '#include <avr/pgmspace.h>\n'
@@ -89,7 +75,7 @@ def generate_header(font, glyphs, name):
             text_width,
         )
 
-        converted = converted_glyffs[glyph]
+        converted = convert_glyff(font, glyph, text_width, text_height)
         hash_format = to_hash_format(converted, text_width, text_height)
         hex_format = to_hex_format(converted, text_width, text_height)
         header_format = to_header_format(hash_format, hex_format)

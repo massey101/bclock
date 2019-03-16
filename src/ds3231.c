@@ -6,6 +6,17 @@
 #define DS3231_WR 0x00
 #define DS3231_RD 0x01
 
+const char * datetime_DOW[] = {
+    "",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday"
+};
+
 
 uint8_t bcd_to_dec(uint8_t bcd_val) {
     return (((bcd_val >> 4) * 10) + (bcd_val & 0x0f));

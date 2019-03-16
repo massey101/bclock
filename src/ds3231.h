@@ -13,6 +13,8 @@ typedef struct {
     uint8_t dow;
 } datetime_t;
 
+extern const char * datetime_DOW[];
+
 uint8_t bcd_to_dec(uint8_t bcd_val);
 uint8_t dec_to_bcd(uint8_t dec_val);
 void ds3231_init(void);

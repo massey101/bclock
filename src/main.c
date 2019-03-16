@@ -10,12 +10,14 @@
 #include "epd2in13b.h"
 #include "epdpaint.h"
 #include "ds3231.h"
+#include "alarms.h"
 #include "clock.h"
 #include "selected_clock.h"
 
 
 #define COLORED   0
 #define UNCOLORED 1
+
 
 uint8_t BCDtoDEC(uint8_t bcd_val) {
     return (((bcd_val >> 4) * 10) + (bcd_val & 0x0F));
@@ -104,12 +106,20 @@ void set_date() {
         return;
     }
 
+    printf("dow: ");
+    retval = get_bcd(&date.dow, 2);
+    printf("\n");
+    if (retval) {
+        return;
+    }
+
     date.hours = bcd_to_dec(date.hours);
     date.minutes = bcd_to_dec(date.minutes);
     date.seconds = bcd_to_dec(date.seconds);
     date.year = bcd_to_dec(year_small) + 2000;
     date.month= bcd_to_dec(date.month);
     date.day = bcd_to_dec(date.day);
+    date.dow = bcd_to_dec(date.dow);
 
     ds3231_set(&date);
 }
@@ -142,18 +152,90 @@ void show_time(struct epd * epd, struct paint * paint, datetime_t * datetime) {
         paint_GetWidth(paint),
         paint_GetHeight(paint)
     );
+    paint_SetWidth(paint, 24);
+    paint_Clear(paint, UNCOLORED);
+    paint_DrawStringAt(paint, 0, 0, datetime_DOW[datetime->dow], &Courier_New24, 1, COLORED);
+    epd_set_partial_window_black(
+        epd,
+        paint_GetImage(paint),
+        epd->width - paint->width-45,
+        8,
+        paint_GetWidth(paint),
+        paint_GetHeight(paint)
+    );
     paint_Clear(paint, UNCOLORED);
     paint_DrawStringAt(paint, 0, 0, date_text, &Courier_New24, 1, COLORED);
     epd_set_partial_window_black(
         epd,
         paint_GetImage(paint),
-        epd->width - paint->width-50,
+        epd->width - paint->width-70,
         8,
         paint_GetWidth(paint),
         paint_GetHeight(paint)
     );
+}
 
-    epd_display_frame(epd);
+void draw_alarm(
+    struct epd * epd,
+    struct paint * paint,
+    int x,
+    int y,
+    alarm_t * alarm
+) {
+    const unsigned char * to_draw;
+    if (alarm->set == 0) {
+        to_draw = clock;
+    } else {
+        to_draw = selected_clock;
+    }
+    int w = pgm_read_byte(&to_draw[0]);
+
+    paint_SetWidth(paint, 24);
+    paint_SetHeight(paint, 100);
+    paint_Clear(paint, UNCOLORED);
+    paint_DrawImageAt(paint, 0, 2, to_draw, 1, COLORED);
+
+    if (alarm->set) {
+        char time_text[16];
+        sprintf(
+            time_text,
+            "%02u:%02u",
+            alarm->hour,
+            alarm->minute
+        );
+
+        paint_DrawStringAt(paint, w+2, 0, time_text, &Courier_New12, 1, COLORED);
+        const char DOW[] = "MTWTFSS";
+        char alarm_DOW[] = "       ";
+        for (int i = 0; i < 7; i++) {
+            if (alarm->dow & (0x01 << i)) {
+                alarm_DOW[i] = DOW[i];
+            }
+        }
+        paint_DrawStringAt(paint, w+2, 8, alarm_DOW, &Courier_New12, 1, COLORED);
+    }
+
+    epd_set_partial_window_black(
+        epd,
+        paint_GetImage(paint),
+        epd->width - paint_GetWidth(paint) - y,
+        x,
+        paint_GetWidth(paint),
+        paint_GetHeight(paint)
+    );
+}
+
+
+void draw_alarms(
+    struct epd * epd,
+    struct paint * paint,
+    int x,
+    int y,
+    alarm_t * alarms
+) {
+    for (int i = 0; i < NUM_ALARMS; i++) {
+        draw_alarm(epd, paint, x, y + i*24, &alarms[i]);
+    }
 }
 
 
@@ -164,6 +246,7 @@ int main(void)
     unsigned char canvas[1024];
     struct epd epd;
     struct paint paint;
+    alarm_t alarms[NUM_ALARMS];
 
     /* init */
     uart_init(38400);
@@ -177,32 +260,21 @@ int main(void)
 
     // Reset with all white
     epd_clear_frame_memory(&epd);
+
+    init_alarms(alarms);
+    alarms[0].set = 1;
+    alarms[0].hour = 7;
+    alarms[0].minute = 30;
+    alarms[0].dow = 0x1f;
+
+    alarms[1].set = 1;
+    alarms[1].hour = 8;
+    alarms[1].minute = 30;
+    alarms[1].dow = 0x60;
+
 #ifdef RESET_DATE
     set_date();
 #endif
-    paint_SetWidth(&paint, 16);
-    paint_SetHeight(&paint, 16);
-    paint_Clear(&paint, UNCOLORED);
-    paint_DrawImageAt(&paint, 0, 0, clock, 1, COLORED);
-    epd_set_partial_window_black(
-        &epd,
-        paint_GetImage(&paint),
-        epd.width - paint.width-8,
-        150,
-        paint_GetWidth(&paint),
-        paint_GetHeight(&paint)
-    );
-
-    paint_Clear(&paint, UNCOLORED);
-    paint_DrawImageAt(&paint, 0, 0, selected_clock, 1, COLORED);
-    epd_set_partial_window_black(
-        &epd,
-        paint_GetImage(&paint),
-        epd.width - paint.width-32,
-        150,
-        paint_GetWidth(&paint),
-        paint_GetHeight(&paint)
-    );
 
     while(1) {
         ds3231_get(&date);
@@ -213,18 +285,22 @@ int main(void)
             date.hours != last_date.hours || \
             date.minutes != last_date.minutes
         ) {
+            draw_alarms(&epd, &paint, 145, 8, alarms);
             show_time(&epd, &paint, &date);
+            epd_display_frame(&epd);
             memcpy(&last_date, &date, sizeof(date));
         }
 
         printf(
-            "%02u:%02u:%02u %04u-%02u-%02u\n",
+            "%02u:%02u:%02u %04u-%02u-%02u %02u %s\n",
             date.hours,
             date.minutes,
             date.seconds,
             date.year,
             date.month,
-            date.day
+            date.day,
+            date.dow,
+            datetime_DOW[date.dow]
         );
 
         _delay_ms(1000);

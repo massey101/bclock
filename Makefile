@@ -33,7 +33,9 @@ OBJS = \
 	$(OBJ)/epd2in13b.o \
 	$(OBJ)/epdif.o \
 	$(OBJ)/epdpaint.o \
-	$(OBJ)/Courier_New24.o \
+	$(OBJ)/alarms.o \
+	$(OBJ)/Courier_New12.o \
+	$(OBJ)/Courier_New24.o
 LIB =
 DEPS = \
 	$(SRC)/uart.h \
@@ -42,6 +44,7 @@ DEPS = \
 	$(SRC)/epd2in13b.h \
 	$(SRC)/epdif.h \
 	$(SRC)/epdpaint.h \
+	$(SRC)/alarms.h \
 	$(SRC)/fonts.h
 
 # Output
