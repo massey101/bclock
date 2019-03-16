@@ -139,7 +139,15 @@ void paint_DrawPixel(struct paint * paint, int x, int y, int colored) {
 /**
  *  @brief: this draws a charactor on the frame buffer but not refresh
  */
-void paint_DrawCharAt(struct paint * paint, int x, int y, char ascii_char, sFONT* font, int colored) {
+void paint_DrawCharAt(
+    struct paint * paint,
+    int x,
+    int y,
+    char ascii_char,
+    sFONT* font,
+    int size,
+    int colored
+) {
     int i, j;
     unsigned int char_offset = (ascii_char - ' ') * font->Height * (font->Width / 8 + (font->Width % 8 ? 1 : 0));
     const unsigned char* ptr = &font->table[char_offset];
@@ -147,7 +155,14 @@ void paint_DrawCharAt(struct paint * paint, int x, int y, char ascii_char, sFONT
     for (j = 0; j < font->Height; j++) {
         for (i = 0; i < font->Width; i++) {
             if (pgm_read_byte(ptr) & (0x80 >> (i % 8))) {
-                paint_DrawPixel(paint, x + i, y + j, colored);
+                paint_DrawFilledRectangle(
+                    paint,
+                    x + i*size,
+                    y + j*size,
+                    x + i*size + size-1,
+                    y + j*size + size-1,
+                    colored
+                );
             }
             if (i % 8 == 7) {
                 ptr++;
@@ -162,7 +177,15 @@ void paint_DrawCharAt(struct paint * paint, int x, int y, char ascii_char, sFONT
 /**
 *  @brief: this displays a string on the frame buffer but not refresh
 */
-void paint_DrawStringAt(struct paint * paint, int x, int y, const char* text, sFONT* font, int colored) {
+void paint_DrawStringAt(
+    struct paint * paint,
+    int x,
+    int y,
+    const char* text,
+    sFONT* font,
+    int size,
+    int colored
+) {
     const char* p_text = text;
     unsigned int counter = 0;
     int refcolumn = x;
@@ -170,9 +193,9 @@ void paint_DrawStringAt(struct paint * paint, int x, int y, const char* text, sF
     /* Send the string character by character on EPD */
     while (*p_text != 0) {
         /* Display one character on EPD */
-        paint_DrawCharAt(paint, refcolumn, y, *p_text, font, colored);
-        /* Decrement the column position by 16 */
-        refcolumn += font->Width;
+        paint_DrawCharAt(paint, refcolumn, y, *p_text, font, size, colored);
+        /* Decrement the column position by the font width */
+        refcolumn += font->Width * size;
         /* Point on the next character */
         p_text++;
         counter++;
