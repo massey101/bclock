@@ -65,6 +65,7 @@ void paint_DrawRectangle(struct paint * paint, int x0, int y0, int x1, int y1, i
 void paint_DrawFilledRectangle(struct paint * paint, int x0, int y0, int x1, int y1, int colored);
 void paint_DrawCircle(struct paint * paint, int x, int y, int radius, int colored);
 void paint_DrawFilledCircle(struct paint * paint, int x, int y, int radius, int colored);
+void paint_DrawImageAt(struct paint * paint, int x, int y, const unsigned char * image, int size, int colored);
 
 #endif
 

@@ -336,4 +336,35 @@ void paint_DrawFilledCircle(struct paint * paint, int x, int y, int radius, int 
     } while(x_pos <= 0);
 }
 
+/**
+*  @brief: this draws an image stored in progmem
+*/
+void paint_DrawImageAt(struct paint * paint, int x, int y, const unsigned char * image, int size, int colored) {
+    int i, j;
+    int w = pgm_read_byte(&image[0]);
+    int h = pgm_read_byte(&image[1]);
+    const unsigned char* ptr = &image[2];
+
+    for (j = 0; j < h; j++) {
+        for (i = 0; i < w; i++) {
+            if (pgm_read_byte(ptr) & (0x80 >> (i % 8))) {
+                paint_DrawFilledRectangle(
+                    paint,
+                    x + i*size,
+                    y + j*size,
+                    x + i*size + size-1,
+                    y + j*size + size-1,
+                    colored
+                );
+            }
+            if (i % 8 == 7) {
+                ptr++;
+            }
+        }
+        if (w % 8 != 0) {
+            ptr++;
+        }
+    }
+}
+
 /* END OF FILE */

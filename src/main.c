@@ -10,7 +10,8 @@
 #include "epd2in13b.h"
 #include "epdpaint.h"
 #include "ds3231.h"
-
+#include "clock.h"
+#include "selected_clock.h"
 
 
 #define COLORED   0
@@ -130,7 +131,7 @@ void show_time(struct epd * epd, struct paint * paint, datetime_t * datetime) {
         datetime->year
     );
     paint_SetWidth(paint, 40);
-    paint_SetHeight(paint, 200);
+    paint_SetHeight(paint, 130);
     paint_Clear(paint, UNCOLORED);
     paint_DrawStringAt(paint, 0, 0, time_text, &Courier_New24, 2, COLORED);
     epd_set_partial_window_black(
@@ -179,6 +180,29 @@ int main(void)
 #ifdef RESET_DATE
     set_date();
 #endif
+    paint_SetWidth(&paint, 16);
+    paint_SetHeight(&paint, 16);
+    paint_Clear(&paint, UNCOLORED);
+    paint_DrawImageAt(&paint, 0, 0, clock, 1, COLORED);
+    epd_set_partial_window_black(
+        &epd,
+        paint_GetImage(&paint),
+        epd.width - paint.width-8,
+        150,
+        paint_GetWidth(&paint),
+        paint_GetHeight(&paint)
+    );
+
+    paint_Clear(&paint, UNCOLORED);
+    paint_DrawImageAt(&paint, 0, 0, selected_clock, 1, COLORED);
+    epd_set_partial_window_black(
+        &epd,
+        paint_GetImage(&paint),
+        epd.width - paint.width-32,
+        150,
+        paint_GetWidth(&paint),
+        paint_GetHeight(&paint)
+    );
 
     while(1) {
         ds3231_get(&date);
