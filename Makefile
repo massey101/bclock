@@ -33,8 +33,7 @@ OBJS = \
 	$(OBJ)/epd2in13b.o \
 	$(OBJ)/epdif.o \
 	$(OBJ)/epdpaint.o \
-	$(OBJ)/DejaVuSansMono24.o \
-	$(OBJ)/DejaVuSansMono48.o
+	$(OBJ)/Courier_New24.o \
 LIB =
 DEPS = \
 	$(SRC)/uart.h \
