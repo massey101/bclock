@@ -8,3 +8,8 @@ http://rcarduino.blogspot.com/2012/08/adding-audio-to-arduino-projects.html
 https://www.microchip.com/wwwproducts/en/ATmega328p
 https://www.pololu.com/docs/0J36/4.b
 https://www.jaycar.com.au/arduino-compatible-usb-to-serial-adaptor-module/p/XC4464
+
+https://www.instructables.com/id/Talking-Arduino-Playing-a-MP3-With-Arduino-Without/
+https://www.waveshare.com/wiki/2.13inch_e-Paper_HAT
+https://maker.pro/arduino/projects/arduino-speaker
+
