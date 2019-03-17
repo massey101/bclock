@@ -244,13 +244,13 @@ const uint8_t Courier_New12_Table [] PROGMEM =
     // @204 '1' (6 pixels wide)
     0x00, //       
     0x00, //       
+    0x00, //       
     0x30, //   ##  
     0x10, //    #  
     0x10, //    #  
     0x10, //    #  
     0x10, //    #  
     0x7c, //  #####
-    0x00, //       
     0x00, //       
     0x00, //       
     0x00, //       
