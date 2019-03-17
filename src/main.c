@@ -285,9 +285,12 @@ int main(void)
             date.hours != last_date.hours || \
             date.minutes != last_date.minutes
         ) {
+            epd_init(&epd);
+            epd_clear_frame_memory(&epd);
             draw_alarms(&epd, &paint, 145, 8, alarms);
             show_time(&epd, &paint, &date);
             epd_display_frame(&epd);
+            epd_sleep(&epd);
             memcpy(&last_date, &date, sizeof(date));
         }
 
