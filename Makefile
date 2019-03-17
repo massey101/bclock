@@ -36,6 +36,7 @@ OBJS = \
 	$(OBJ)/alarms.o \
 	$(OBJ)/Courier_New12.o \
 	$(OBJ)/Courier_New24.o
+	#$(OBJ)/music.o
 LIB =
 DEPS = \
 	$(SRC)/uart.h \
@@ -46,6 +47,8 @@ DEPS = \
 	$(SRC)/epdpaint.h \
 	$(SRC)/alarms.h \
 	$(SRC)/fonts.h
+	#$(SRC)/music.h \
+	$(SRC)/pitches.h
 
 # Output
 HEX = $(BIN)/$(PROJ).hex

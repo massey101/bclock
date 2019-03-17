@@ -1,6 +1,9 @@
 #ifndef ALARMS_H
 #define ALARMS_H
 
+#include <stdint.h>
+#include "ds3231.h"
+
 
 #define NUM_ALARMS 4
 
@@ -27,5 +30,10 @@ void init_alarm(alarm_t * alarm);
  * alarms - An array of NUM_ALARMS alarms.
  */
 void init_alarms(alarm_t * alarms);
+
+
+uint8_t check_alarms(alarm_t * alarms, datetime_t * date);
+void activate_alarm();
+void deactivate_alarm();
 
 #endif // ALARMS_H

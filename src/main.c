@@ -11,6 +11,7 @@
 #include "epdpaint.h"
 #include "ds3231.h"
 #include "alarms.h"
+#include "music.h"
 #include "clock.h"
 #include "selected_clock.h"
 
@@ -208,7 +209,7 @@ void draw_alarm(
         const char DOW[] = "MTWTFSS";
         char alarm_DOW[] = "       ";
         for (int i = 0; i < 7; i++) {
-            if (alarm->dow & (0x01 << i)) {
+            if (alarm->dow & (0x01 << (i + 1))) {
                 alarm_DOW[i] = DOW[i];
             }
         }
@@ -250,11 +251,13 @@ int main(void)
 
     /* init */
     uart_init(38400);
+    stdout = &uart_stdout;
+    stdin = &uart_input;
+    printf("init\n");
     ds3231_init();
     epd_init(&epd);
     paint_init(&paint, canvas, 0, 0);
-    stdout = &uart_stdout;
-    stdin = &uart_input;
+    // music_init();
 
     paint_SetRotate(&paint, ROTATE_90);
 
@@ -265,16 +268,25 @@ int main(void)
     alarms[0].set = 1;
     alarms[0].hour = 7;
     alarms[0].minute = 30;
-    alarms[0].dow = 0x1f;
+    alarms[0].dow = 0x3e;
 
     alarms[1].set = 1;
     alarms[1].hour = 8;
     alarms[1].minute = 30;
-    alarms[1].dow = 0x60;
+    alarms[1].dow = 0xc0;
+
+    alarms[2].set = 1;
+    alarms[2].hour = 16;
+    alarms[2].minute = 44;
+    alarms[2].dow = 0xc0;
 
 #ifdef RESET_DATE
     set_date();
 #endif
+
+    // printf("Playing music\n");
+    // music_play_song();
+    // printf("Done Playing music\n");
 
     while(1) {
         ds3231_get(&date);
@@ -291,6 +303,10 @@ int main(void)
             show_time(&epd, &paint, &date);
             epd_display_frame(&epd);
             epd_sleep(&epd);
+            if (check_alarms(alarms, &date)) {
+                printf("Activating alarm!");
+                activate_alarm();
+            }
             memcpy(&last_date, &date, sizeof(date));
         }
 

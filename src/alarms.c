@@ -19,6 +19,9 @@ void init_alarm(alarm_t * alarm) {
 
 void init_alarms(alarm_t * alarms) {
     uint32_t check_sum;
+
+    DDRC |= (1<<PC0);
+
     check_sum = eeprom_read_dword(&e_check_sum);
     if (check_sum == ALARM_CHECKSUM) {
         for (int i = 0; i < NUM_ALARMS; i++) {
@@ -34,3 +37,28 @@ void init_alarms(alarm_t * alarms) {
     eeprom_write_dword(&e_check_sum, ALARM_CHECKSUM);
 }
 
+
+uint8_t check_alarms(alarm_t * alarms, datetime_t * date) {
+    for (int i = 0; i < NUM_ALARMS; i++) {
+        if (
+            alarms[i].set &&
+            alarms[i].hour == date->hours &&
+            alarms[i].minute == date->minutes &&
+            alarms[i].dow & (1<<date->dow)
+        ) {
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+
+void activate_alarm() {
+    PORTC |= (1<<PC0);
+}
+
+
+void deactivate_alarm() {
+    PORTC &= ~(1<<PC0);
+}
