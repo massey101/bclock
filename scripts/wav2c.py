@@ -140,7 +140,7 @@ def main(argv=None):
     out_filename = argv[2]
     sound_name = argv[3]
     if len(argv) > 4:
-        samples = argv[4]
+        samples = int(argv[4])
     else:
         samples = -1
 
