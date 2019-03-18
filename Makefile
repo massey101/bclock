@@ -50,8 +50,8 @@ DEPS = \
 	$(SRC)/alarms.h \
 	$(SRC)/sounds.h \
 	$(SRC)/pcm_audio.h \
-	$(SRC)/img_clock.h \
-	$(SRC)/img_selected_clock.h \
+	$(SRC)/img_bell.h \
+	$(SRC)/img_bell_ringing.h \
 	$(SRC)/fonts.h
 
 # Output

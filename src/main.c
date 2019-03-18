@@ -13,8 +13,8 @@
 #include "alarms.h"
 #include "pcm_audio.h"
 #include "sounds.h"
-#include "img_clock.h"
-#include "img_selected_clock.h"
+#include "img_bell.h"
+#include "img_bell_ringing.h"
 
 
 #define COLORED   0
@@ -184,15 +184,14 @@ void draw_alarm(
     int y,
     alarm_t * alarm
 ) {
+    if (!alarm->set) {
+        return;
+    }
     const unsigned char * to_draw;
-    if (alarm->set) {
-        if (alarm->active) {
-            to_draw = img_clock;
-        } else {
-            to_draw = img_selected_clock;
-        }
+    if (alarm->active) {
+        to_draw = img_bell_ringing;
     } else {
-        to_draw = img_clock;
+        to_draw = img_bell;
     }
     int w = pgm_read_byte(&to_draw[0]);
 

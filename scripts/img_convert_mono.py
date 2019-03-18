@@ -22,17 +22,17 @@ def main():
     variable_name = '_'.join(file_name.split('.')[:-1])
 
     output_file = open(sys.argv[2], 'w')
-    output_file.write("#include <avr/pgmspace.h>\n\n")
     output_file.write("#ifndef _%s_\n" % include_guard)
-    output_file.write("#define _%s_\n" % include_guard)
+    output_file.write("#define _%s_\n\n" % include_guard)
+    output_file.write("#include <avr/pgmspace.h>\n\n")
     output_file.write("static const uint8_t PROGMEM %s[] = {\n" % variable_name)
-    output_file.write("\t0x%x, 0x%x,\n" % (width, height))
+    output_file.write("    0x%x, 0x%x,\n" % (width, height))
 
     bit_pos = 0
     bits = 0
 
     for y in range(0, height):
-        output_file.write("\t")
+        output_file.write("   ")
         for x in range(0, width):
             print(bit_pos)
             r, g, b = img.getpixel((x, y))
@@ -43,13 +43,12 @@ def main():
             bit_pos += 1
 
             if bit_pos % 8 == 0:
-                output_file.write("0x%x, " % bits)
+                output_file.write(" 0x{:02x},".format(bits))
                 bits = 0
 
-        print('newline')
         output_file.write("\n")
 
-    output_file.write("};\n")
+    output_file.write("};\n\n")
     output_file.write("#endif\n\n")
 
     for y in range(0, height):
