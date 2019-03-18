@@ -80,3 +80,9 @@ uint8_t activated_alarms(alarm_t * alarms) {
 
     return 0;
 }
+
+void clear_alarms(alarm_t * alarms) {
+    for (int i = 0; i < NUM_ALARMS; i++) {
+        alarms[i].active = 0;
+    }
+}
