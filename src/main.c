@@ -12,6 +12,7 @@
 #include "ds3231.h"
 #include "alarms.h"
 #include "pcm_audio.h"
+#include "async_delay.h"
 #include "sounds.h"
 #include "img_bell.h"
 #include "img_bell_ringing.h"
@@ -23,6 +24,8 @@
 
 static volatile alarm_t alarms[NUM_ALARMS];
 static volatile uint8_t audio_direction_toggle;
+static volatile struct pcm_audio * audio_to_play;
+static volatile uint16_t audio_delay;
 
 
 uint8_t BCDtoDEC(uint8_t bcd_val) {
@@ -247,17 +250,38 @@ void draw_alarms(
     }
 }
 
-void alarm_cb() {
-    if (activated_alarms(alarms)) {
-        pcm_audio_play(&snd_loop, audio_direction_toggle % 2, &alarm_cb);
-        audio_direction_toggle++;
+void wait_cb();
+
+void alarm_cb(void * ctx) {
+    if (!activated_alarms(alarms)) {
+        return;
     }
+
+    if (audio_direction_toggle >= 1) {
+        audio_to_play = &snd_buzzer;
+        audio_delay = 200;
+    }
+
+    if (audio_direction_toggle >= 60) {
+        clear_alarms(alarms);
+        return;
+    }
+
+    pcm_audio_play(audio_to_play, 0, &wait_cb);
+    audio_direction_toggle++;
+}
+
+void wait_cb() {
+    pcm_audio_stop();
+    async_delay_ms(audio_delay, 0, &alarm_cb);
 }
 
 
 void start_alarm() {
     audio_direction_toggle = 0;
-    pcm_audio_play(&snd_start, 0, &alarm_cb);
+    audio_to_play = &snd_wakeup_call;
+    audio_delay = 5000;
+    pcm_audio_play(audio_to_play, 0, &wait_cb);
 }
 
 
@@ -297,15 +321,16 @@ int main(void)
     alarms[1].dow = 0xc0;
 
     alarms[2].set = 1;
-    alarms[2].hour = 0;
-    alarms[2].minute = 59;
+    alarms[2].hour = 2;
+    alarms[2].minute = 37;
     alarms[2].dow = 0xff;
+    alarms[2].active = 1;
 
 #ifdef RESET_DATE
     set_date();
 #endif
 
-    while(1) {
+    while (1) {
         ds3231_get(&date);
         if (
             date.year != last_date.year || \

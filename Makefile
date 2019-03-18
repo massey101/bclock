@@ -35,8 +35,9 @@ OBJS = \
 	$(OBJ)/epdpaint.o \
 	$(OBJ)/alarms.o \
 	$(OBJ)/pcm_audio.o \
-	$(OBJ)/snd_start.o \
-	$(OBJ)/snd_loop.o \
+	$(OBJ)/async_delay.o \
+	$(OBJ)/snd_wakeup_call.o \
+	$(OBJ)/snd_buzzer.o \
 	$(OBJ)/Courier_New12.o \
 	$(OBJ)/Courier_New24.o
 LIB =
@@ -50,6 +51,7 @@ DEPS = \
 	$(SRC)/alarms.h \
 	$(SRC)/sounds.h \
 	$(SRC)/pcm_audio.h \
+	$(SRC)/async_delay.h \
 	$(SRC)/img_bell.h \
 	$(SRC)/img_bell_ringing.h \
 	$(SRC)/fonts.h
