@@ -89,9 +89,10 @@ void epd_if_spi_transfer(unsigned char data) {
 }
 
 int epd_if_init(void) {
-    DDRB = (1<<PB3) | (1<<PB5) | (1<<PB2);
-    DDRD = (1<<PD7) | (1<<PD6) | (0<<PD5);
-    SPCR = (1<<SPE) | (1<<MSTR) | (1<<SPR0);
+    DDRB |= (1<<PB3) | (1<<PB5) | (1<<PB2);
+    DDRD |= (1<<PD7) | (1<<PD6);
+    DDRD &= ~(1<<PD5);
+    SPCR |= (1<<SPE) | (1<<MSTR) | (1<<SPR0);
     PORTB |= (1<<PB2);
     return 0;
 }
