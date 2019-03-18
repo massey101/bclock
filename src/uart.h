@@ -12,12 +12,12 @@
 #include <stdio.h>
 #include <stdint.h>
 
-static FILE uart_stdout;
-static FILE uart_input;
-static FILE uart_io;
+const FILE uart_stdout;
+const FILE uart_input;
+const FILE uart_io;
 
 void uart_init(uint32_t baud);
 char uart_getc(void);
 void uart_sendc(char data);
-int uart_getchar(FILE * stream);
+char uart_getchar(FILE * stream);
 int uart_printchar(char var, FILE * stream);

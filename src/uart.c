@@ -3,19 +3,19 @@
 #include <stdint.h>
 #include "uart.h"
 
-static FILE uart_stdout = FDEV_SETUP_STREAM(
+const FILE uart_stdout = FDEV_SETUP_STREAM(
         uart_printchar,
         NULL,
         _FDEV_SETUP_WRITE
 );
 
-static FILE uart_input = FDEV_SETUP_STREAM(
+const FILE uart_input = FDEV_SETUP_STREAM(
         NULL,
         uart_getchar,
         _FDEV_SETUP_READ
 );
 
-static FILE uart_io = FDEV_SETUP_STREAM(
+const FILE uart_io = FDEV_SETUP_STREAM(
         uart_printchar,
         uart_getchar,
         _FDEV_SETUP_RW
@@ -49,7 +49,7 @@ void uart_sendc(char data)
 	UDR0 = data;
 }
 
-int uart_getchar(FILE * stream) {
+char uart_getchar(FILE * stream) {
         char c = uart_getc();
         /* Give return line endings. */
         if (c == '\r') {
