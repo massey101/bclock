@@ -22,6 +22,7 @@
 
 
 static volatile alarm_t alarms[NUM_ALARMS];
+static volatile uint8_t audio_direction_toggle;
 
 
 uint8_t BCDtoDEC(uint8_t bcd_val) {
@@ -248,13 +249,15 @@ void draw_alarms(
 
 void alarm_cb() {
     if (activated_alarms(alarms)) {
-        pcm_audio_play(&snd_loop, &alarm_cb);
+        pcm_audio_play(&snd_loop, audio_direction_toggle % 2, &alarm_cb);
+        audio_direction_toggle++;
     }
 }
 
 
 void start_alarm() {
-    pcm_audio_play(&snd_start, &alarm_cb);
+    audio_direction_toggle = 0;
+    pcm_audio_play(&snd_start, 0, &alarm_cb);
 }
 
 
@@ -295,7 +298,7 @@ int main(void)
 
     alarms[2].set = 1;
     alarms[2].hour = 0;
-    alarms[2].minute = 34;
+    alarms[2].minute = 59;
     alarms[2].dow = 0xff;
 
 #ifdef RESET_DATE

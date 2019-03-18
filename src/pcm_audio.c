@@ -11,7 +11,16 @@ volatile uint16_t sample_i;
 volatile uint8_t first_sample;
 volatile uint8_t last_sample;
 volatile struct pcm_audio * current_audio;
-void (*done_cb)(void);
+volatile uint8_t reverse;
+volatile void (*done_cb)(void);
+
+
+uint8_t pcm_audio_get_sample(struct pcm_audio * pcm_audio, uint16_t i, uint8_t reverse) {
+    if (reverse) {
+        i = pcm_audio->length - i - 1;
+    }
+    return pgm_read_byte(&pcm_audio->data[i]);
+}
 
 
 void stopPlayback() {
@@ -28,6 +37,7 @@ void stopPlayback() {
 
     done_cb();
 }
+
 
 // This is called at 8000 Hz to load the next sample.
 ISR(TIMER1_COMPA_vect) {
@@ -47,7 +57,7 @@ ISR(TIMER1_COMPA_vect) {
         return;
     }
 
-    uint8_t sample = pgm_read_byte(&current_audio->data[sample_i]);
+    uint8_t sample = pcm_audio_get_sample(current_audio, sample_i, reverse);
     if (sample_i == 0 && first_sample != sample) {
         if (first_sample > sample) {
             first_sample--;
@@ -92,7 +102,7 @@ void pcm_audio_init() {
 };
 
 
-void pcm_audio_play(struct pcm_audio * pcm_audio, void (*_done_cb)()) {
+void pcm_audio_play(struct pcm_audio * pcm_audio, uint8_t _reverse, void (*_done_cb)()) {
     // Set up Timer 1 to send a sample every interrupt.
 
     cli();
@@ -115,13 +125,15 @@ void pcm_audio_play(struct pcm_audio * pcm_audio, void (*_done_cb)()) {
     // Enable interrupt when TCNT1 == OCR1A (p.136)
     TIMSK1 |= _BV(OCIE1A);
 
+    reverse = _reverse;
     sample_i = 0;
     first_sample = PCM_MIDDLE;
-    last_sample = pgm_read_byte(&pcm_audio->data[pcm_audio->length-1]);
+    last_sample = pcm_audio_get_sample(pcm_audio, pcm_audio->length-1, reverse);
     current_audio = pcm_audio;
     done_cb = _done_cb;
     sei();
 }
+
 
 uint8_t pcm_audio_busy() {
     if (current_audio) {
