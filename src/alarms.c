@@ -80,13 +80,3 @@ uint8_t activated_alarms(alarm_t * alarms) {
 
     return 0;
 }
-
-
-void activate_alarm() {
-    PORTC |= (1<<PC0);
-}
-
-
-void deactivate_alarm() {
-    PORTC &= ~(1<<PC0);
-}
