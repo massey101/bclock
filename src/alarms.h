@@ -13,6 +13,7 @@ typedef struct alarm {
     uint8_t hour;
     uint8_t minute;
     uint8_t dow;
+    uint8_t active;
 } alarm_t;
 
 
@@ -32,7 +33,9 @@ void init_alarm(alarm_t * alarm);
 void init_alarms(alarm_t * alarms);
 
 
+uint8_t check_alarm(alarm_t * alarm, datetime_t * date);
 uint8_t check_alarms(alarm_t * alarms, datetime_t * date);
+uint8_t activated_alarms(alarm_t * alarms);
 void activate_alarm();
 void deactivate_alarm();
 

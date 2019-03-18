@@ -38,14 +38,42 @@ void init_alarms(alarm_t * alarms) {
 }
 
 
+uint8_t check_alarm(alarm_t * alarm, datetime_t * date) {
+    if (!alarm->set) {
+       return 0;
+    }
+
+    if (alarm->hour != date->hours) {
+        return 0;
+    }
+
+    if (alarm->minute != date->minutes) {
+        return 0;
+    }
+
+    if (!(alarm->dow & (1<<date->dow))) {
+        return 0;
+    }
+
+    alarm->active = -1;
+    return -1;
+}
+
+
 uint8_t check_alarms(alarm_t * alarms, datetime_t * date) {
     for (int i = 0; i < NUM_ALARMS; i++) {
-        if (
-            alarms[i].set &&
-            alarms[i].hour == date->hours &&
-            alarms[i].minute == date->minutes &&
-            alarms[i].dow & (1<<date->dow)
-        ) {
+        if (check_alarm(&alarms[i], date)) {
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+
+uint8_t activated_alarms(alarm_t * alarms) {
+    for (int i = 0; i < NUM_ALARMS; i++) {
+        if (alarms[i].active) {
             return -1;
         }
     }

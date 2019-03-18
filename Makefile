@@ -34,9 +34,11 @@ OBJS = \
 	$(OBJ)/epdif.o \
 	$(OBJ)/epdpaint.o \
 	$(OBJ)/alarms.o \
+	$(OBJ)/pcm_audio.o \
+	$(OBJ)/snd_start.o \
+	$(OBJ)/snd_loop.o \
 	$(OBJ)/Courier_New12.o \
 	$(OBJ)/Courier_New24.o
-	#$(OBJ)/music.o
 LIB =
 DEPS = \
 	$(SRC)/uart.h \
@@ -46,9 +48,11 @@ DEPS = \
 	$(SRC)/epdif.h \
 	$(SRC)/epdpaint.h \
 	$(SRC)/alarms.h \
+	$(SRC)/sounds.h \
+	$(SRC)/pcm_audio.h \
+	$(SRC)/img_clock.h \
+	$(SRC)/img_selected_clock.h \
 	$(SRC)/fonts.h
-	#$(SRC)/music.h \
-	$(SRC)/pitches.h
 
 # Output
 HEX = $(BIN)/$(PROJ).hex

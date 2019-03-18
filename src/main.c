@@ -11,9 +11,10 @@
 #include "epdpaint.h"
 #include "ds3231.h"
 #include "alarms.h"
-#include "music.h"
-#include "clock.h"
-#include "selected_clock.h"
+#include "pcm_audio.h"
+#include "sounds.h"
+#include "img_clock.h"
+#include "img_selected_clock.h"
 
 
 #define COLORED   0
@@ -184,10 +185,14 @@ void draw_alarm(
     alarm_t * alarm
 ) {
     const unsigned char * to_draw;
-    if (alarm->set == 0) {
-        to_draw = clock;
+    if (alarm->set) {
+        if (alarm->active) {
+            to_draw = img_clock;
+        } else {
+            to_draw = img_selected_clock;
+        }
     } else {
-        to_draw = selected_clock;
+        to_draw = img_clock;
     }
     int w = pgm_read_byte(&to_draw[0]);
 
@@ -240,6 +245,16 @@ void draw_alarms(
 }
 
 
+void start_alarm() {
+    pcm_audio_play(&snd_start);
+    while(pcm_audio_busy());
+    while (1) {
+        pcm_audio_play(&snd_loop);
+        while(pcm_audio_busy());
+    }
+}
+
+
 int main(void)
 {
     datetime_t last_date = {0};
@@ -257,7 +272,6 @@ int main(void)
     ds3231_init();
     epd_init(&epd);
     paint_init(&paint, canvas, 0, 0);
-    // music_init();
 
     paint_SetRotate(&paint, ROTATE_90);
 
@@ -284,10 +298,6 @@ int main(void)
     set_date();
 #endif
 
-    // printf("Playing music\n");
-    // music_play_song();
-    // printf("Done Playing music\n");
-
     while(1) {
         ds3231_get(&date);
         if (
@@ -297,15 +307,16 @@ int main(void)
             date.hours != last_date.hours || \
             date.minutes != last_date.minutes
         ) {
+            check_alarms(alarms, &date);
             epd_init(&epd);
             epd_clear_frame_memory(&epd);
             draw_alarms(&epd, &paint, 145, 8, alarms);
             show_time(&epd, &paint, &date);
             epd_display_frame(&epd);
             epd_sleep(&epd);
-            if (check_alarms(alarms, &date)) {
+            if (activated_alarms(alarms)) {
                 printf("Activating alarm!");
-                activate_alarm();
+                start_alarm();
             }
             memcpy(&last_date, &date, sizeof(date));
         }
