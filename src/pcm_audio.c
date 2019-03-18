@@ -11,6 +11,7 @@ volatile uint16_t sample_i;
 volatile uint8_t first_sample;
 volatile uint8_t last_sample;
 volatile struct pcm_audio * current_audio;
+void (*done_cb)(void);
 
 
 void stopPlayback() {
@@ -21,6 +22,11 @@ void stopPlayback() {
     TCCR1B &= ~_BV(CS10);
 
     current_audio = 0;
+    if (done_cb == 0) {
+        return;
+    }
+
+    done_cb();
 }
 
 // This is called at 8000 Hz to load the next sample.
@@ -86,7 +92,7 @@ void pcm_audio_init() {
 };
 
 
-void pcm_audio_play(struct pcm_audio * pcm_audio) {
+void pcm_audio_play(struct pcm_audio * pcm_audio, void (*_done_cb)()) {
     // Set up Timer 1 to send a sample every interrupt.
 
     cli();
@@ -113,6 +119,7 @@ void pcm_audio_play(struct pcm_audio * pcm_audio) {
     first_sample = PCM_MIDDLE;
     last_sample = pgm_read_byte(&pcm_audio->data[pcm_audio->length-1]);
     current_audio = pcm_audio;
+    done_cb = _done_cb;
     sei();
 }
 

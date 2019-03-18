@@ -21,6 +21,9 @@
 #define UNCOLORED 1
 
 
+static volatile alarm_t alarms[NUM_ALARMS];
+
+
 uint8_t BCDtoDEC(uint8_t bcd_val) {
     return (((bcd_val >> 4) * 10) + (bcd_val & 0x0F));
 }
@@ -243,14 +246,15 @@ void draw_alarms(
     }
 }
 
+void alarm_cb() {
+    if (activated_alarms(alarms)) {
+        pcm_audio_play(&snd_loop, &alarm_cb);
+    }
+}
+
 
 void start_alarm() {
-    pcm_audio_play(&snd_start);
-    while(pcm_audio_busy());
-    while (1) {
-        pcm_audio_play(&snd_loop);
-        while(pcm_audio_busy());
-    }
+    pcm_audio_play(&snd_start, &alarm_cb);
 }
 
 
@@ -261,7 +265,7 @@ int main(void)
     unsigned char canvas[1024];
     struct epd epd;
     struct paint paint;
-    alarm_t alarms[NUM_ALARMS];
+    uint8_t alarm_already_active;
 
     /* init */
     uart_init(38400);
@@ -290,9 +294,9 @@ int main(void)
     alarms[1].dow = 0xc0;
 
     alarms[2].set = 1;
-    alarms[2].hour = 16;
-    alarms[2].minute = 44;
-    alarms[2].dow = 0xc0;
+    alarms[2].hour = 0;
+    alarms[2].minute = 34;
+    alarms[2].dow = 0xff;
 
 #ifdef RESET_DATE
     set_date();
@@ -307,6 +311,7 @@ int main(void)
             date.hours != last_date.hours || \
             date.minutes != last_date.minutes
         ) {
+            alarm_already_active = activated_alarms(alarms);
             check_alarms(alarms, &date);
             epd_init(&epd);
             epd_clear_frame_memory(&epd);
@@ -314,7 +319,7 @@ int main(void)
             show_time(&epd, &paint, &date);
             epd_display_frame(&epd);
             epd_sleep(&epd);
-            if (activated_alarms(alarms)) {
+            if (activated_alarms(alarms) && !alarm_already_active) {
                 printf("Activating alarm!");
                 start_alarm();
             }

@@ -24,7 +24,7 @@ struct pcm_audio {
 };
 
 void pcm_audio_init();
-void pcm_audio_play(struct pcm_audio * pcm_audio);
+void pcm_audio_play(struct pcm_audio * pcm_audio, void (*_done_cb)());
 uint8_t pcm_audio_busy();
 
 #endif // PCM_AUDIO_H
