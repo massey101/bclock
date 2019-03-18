@@ -5,14 +5,25 @@
 
 
 #define PCM_MIDDLE 127
+#define PCM_LOW 0
 
+enum pcm_mode {
+    STOPPED,
+    STARTING,
+    PLAYING,
+    FINISHING,
+    FINISHED,
+    STOPPING
+};
 
 volatile uint16_t sample_i;
 volatile uint8_t first_sample;
 volatile uint8_t last_sample;
+volatile uint8_t current_sample;
 volatile struct pcm_audio * current_audio;
 volatile uint8_t reverse;
 volatile void (*done_cb)(void);
+volatile enum pcm_mode current_mode;
 
 
 uint8_t pcm_audio_get_sample(struct pcm_audio * pcm_audio, uint16_t i, uint8_t reverse) {
@@ -23,55 +34,92 @@ uint8_t pcm_audio_get_sample(struct pcm_audio * pcm_audio, uint16_t i, uint8_t r
 }
 
 
-void stopPlayback() {
+void stop_playback() {
     // Disable playback per-sample interrupt.
     TIMSK1 &= ~_BV(OCIE1A);
 
     // Disable the per-sample timer completely.
     TCCR1B &= ~_BV(CS10);
 
-    current_audio = 0;
-    if (done_cb == 0) {
-        return;
-    }
+    // Disable the PWM timer.
+    // TCCR2B &= ~_BV(CS10);
 
-    done_cb();
+    PORTD &= ~_BV(PD3);
 }
 
 
 // This is called at 8000 Hz to load the next sample.
 ISR(TIMER1_COMPA_vect) {
-    if (sample_i >= current_audio->length) {
-        // When we have finished ramp down the audio before stopping.
-        if (last_sample == PCM_MIDDLE) {
-            stopPlayback();
-            return;
+    if (current_mode == STARTING) {
+        // Ramp up/down to the value of the first sample. Once there start
+        // playing immediately.
+        if (current_sample > first_sample) {
+            current_sample--;
+        } else if (current_sample < first_sample) {
+            current_sample++;
         }
-        if (last_sample > PCM_MIDDLE) {
-            last_sample--;
+        OCR2B = current_sample;
+
+        if (current_sample == first_sample) {
+            current_mode = PLAYING;
+        }
+    }
+
+    if (current_mode == PLAYING) {
+        // Move through the file and play each sample. Once we reach the end
+        // start pausing and notify the caller that we have finished.
+        current_sample = pcm_audio_get_sample(current_audio, sample_i, reverse);
+        OCR2B = current_sample;
+        sample_i++;
+
+        if (sample_i >= current_audio->length) {
+            current_mode = FINISHING;
+            current_audio = 0;
+            if (done_cb != 0) {
+                done_cb();
+            }
+        }
+    }
+
+    if (current_mode == FINISHING) {
+        // Ramp up/down to the middle value. Once there consider yourself
+        // paused.
+        if (current_sample > PCM_MIDDLE) {
+            current_sample--;
         } else if (last_sample < PCM_MIDDLE) {
-            last_sample++;
+            current_sample++;
         }
 
-        OCR2B = last_sample;
-        return;
+        OCR2B = current_sample;
+
+        if (current_sample == PCM_MIDDLE) {
+            current_mode = FINISHED;
+        }
     }
 
-    uint8_t sample = pcm_audio_get_sample(current_audio, sample_i, reverse);
-    if (sample_i == 0 && first_sample != sample) {
-        if (first_sample > sample) {
-            first_sample--;
-        } else if (first_sample < sample) {
-            first_sample++;
+    if (current_mode == FINISHED) {
+        // Do nothing
+    }
+
+    if (current_mode == STOPPING) {
+        // Ramp up/down to the middle value. Once there consider yourself
+        // paused.
+        if (current_sample > PCM_LOW) {
+            current_sample--;
+        } else if (last_sample < PCM_LOW) {
+            current_sample++;
         }
 
-        OCR2B = first_sample;
+        OCR2B = current_sample;
 
-        return;
+        if (current_sample == PCM_LOW) {
+            current_mode = STOPPED;
+        }
     }
 
-    OCR2B = sample;
-    sample_i++;
+    if (current_mode == STOPPED) {
+        stop_playback();
+    }
 }
 
 
@@ -95,10 +143,11 @@ void pcm_audio_init() {
     TCCR2A &= ~_BV(COM2B0);
     // No prescaler (p.158)
     TCCR2B &= ~(_BV(CS12) | _BV(CS11));
+    // This will enable the PWM timer
     TCCR2B |= _BV(CS10);
 
     // Set initial pulse width to the first sample.
-    OCR2B = PCM_MIDDLE;
+    OCR2B = PCM_LOW;
 };
 
 
@@ -125,13 +174,21 @@ void pcm_audio_play(struct pcm_audio * pcm_audio, uint8_t _reverse, void (*_done
     // Enable interrupt when TCNT1 == OCR1A (p.136)
     TIMSK1 |= _BV(OCIE1A);
 
+    // Enable the PWM timer.
+    TCCR2B |= _BV(CS10);
+
     reverse = _reverse;
     sample_i = 0;
-    first_sample = PCM_MIDDLE;
-    last_sample = pcm_audio_get_sample(pcm_audio, pcm_audio->length-1, reverse);
+    first_sample = pcm_audio_get_sample(pcm_audio, 0, reverse);
     current_audio = pcm_audio;
     done_cb = _done_cb;
+    current_mode = STARTING;
     sei();
+}
+
+
+void pcm_audio_stop() {
+    current_mode = STOPPING;
 }
 
 
