@@ -4,7 +4,11 @@
 #include "pcm_audio.h"
 
 
+#define PCM_MIDDLE 127
+
+
 volatile uint16_t sample_i;
+volatile uint8_t first_sample;
 volatile uint8_t last_sample;
 volatile struct pcm_audio * current_audio;
 
@@ -16,11 +20,6 @@ void stopPlayback() {
     // Disable the per-sample timer completely.
     TCCR1B &= ~_BV(CS10);
 
-    // Disable the PWM timer.
-    TCCR2B &= ~_BV(CS10);
-
-    PORTD &= ~_BV(PD3);
-
     current_audio = 0;
 }
 
@@ -28,20 +27,39 @@ void stopPlayback() {
 ISR(TIMER1_COMPA_vect) {
     if (sample_i >= current_audio->length) {
         // When we have finished ramp down the audio before stopping.
-        if (last_sample == 0) {
+        if (last_sample == PCM_MIDDLE) {
             stopPlayback();
             return;
         }
-        last_sample--;
+        if (last_sample > PCM_MIDDLE) {
+            last_sample--;
+        } else if (last_sample < PCM_MIDDLE) {
+            last_sample++;
+        }
+
         OCR2B = last_sample;
         return;
     }
 
-    OCR2B = pgm_read_byte(&current_audio->data[sample_i]);
+    uint8_t sample = pgm_read_byte(&current_audio->data[sample_i]);
+    if (sample_i == 0 && first_sample != sample) {
+        if (first_sample > sample) {
+            first_sample--;
+        } else if (first_sample < sample) {
+            first_sample++;
+        }
+
+        OCR2B = first_sample;
+
+        return;
+    }
+
+    OCR2B = sample;
     sample_i++;
 }
 
-void pcm_audio_play(struct pcm_audio * pcm_audio) {
+
+void pcm_audio_init() {
     // Setup PORTD PIN 3 as an ouput (OC2B)
     DDRD |= _BV(PD3);
 
@@ -64,9 +82,11 @@ void pcm_audio_play(struct pcm_audio * pcm_audio) {
     TCCR2B |= _BV(CS10);
 
     // Set initial pulse width to the first sample.
-    OCR2B = pgm_read_byte(&pcm_audio->data[0]);
+    OCR2B = PCM_MIDDLE;
+};
 
 
+void pcm_audio_play(struct pcm_audio * pcm_audio) {
     // Set up Timer 1 to send a sample every interrupt.
 
     cli();
@@ -90,6 +110,7 @@ void pcm_audio_play(struct pcm_audio * pcm_audio) {
     TIMSK1 |= _BV(OCIE1A);
 
     sample_i = 0;
+    first_sample = PCM_MIDDLE;
     last_sample = pgm_read_byte(&pcm_audio->data[pcm_audio->length-1]);
     current_audio = pcm_audio;
     sei();

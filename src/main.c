@@ -270,6 +270,7 @@ int main(void)
     stdin = &uart_input;
     printf("init\n");
     ds3231_init();
+    pcm_audio_init();
     epd_init(&epd);
     paint_init(&paint, canvas, 0, 0);
 

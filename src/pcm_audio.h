@@ -23,6 +23,7 @@ struct pcm_audio {
     const uint8_t * data;
 };
 
+void pcm_audio_init();
 void pcm_audio_play(struct pcm_audio * pcm_audio);
 uint8_t pcm_audio_busy();
 
