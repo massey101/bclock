@@ -39,10 +39,10 @@
 #define LOW 0
 #define HIGH 1
 
-int epd_if_init(void);
-void epd_if_digital_write(int pin, int value);
-int epd_if_digital_read(int pin);
-void epd_if_delay_ms(unsigned int delaytime);
-void epd_if_spi_transfer(unsigned char data);
+int epd_if_Init(void);
+void epd_if_DigitalWrite(int pin, int value);
+int epd_if_DigitalRead(int pin);
+void epd_if_DelayMs(unsigned int delaytime);
+void epd_if_SpiTransfer(unsigned char data);
 
 #endif

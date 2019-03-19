@@ -34,7 +34,7 @@
 // DC = PD6
 // BUSY = PD5
 
-void epd_if_digital_write(int pin, int value) {
+void epd_if_DigitalWrite(int pin, int value) {
     if (pin == RST_PIN) {
         if (value == LOW) {
             PORTD &= ~(1<<PD7);
@@ -65,7 +65,7 @@ void epd_if_digital_write(int pin, int value) {
     }
 }
 
-int epd_if_digital_read(int pin) {
+int epd_if_DigitalRead(int pin) {
     if (pin == RST_PIN) {
         return (PIND & (1<<PD7)) >> PD7;
     }
@@ -81,14 +81,14 @@ int epd_if_digital_read(int pin) {
     return -1;
 }
 
-void epd_if_spi_transfer(unsigned char data) {
-    epd_if_digital_write(CS_PIN, LOW);
+void epd_if_SpiTransfer(unsigned char data) {
+    epd_if_DigitalWrite(CS_PIN, LOW);
     SPDR = data;
     while (!(SPSR & (1<<SPIF)));
-    epd_if_digital_write(CS_PIN, HIGH);
+    epd_if_DigitalWrite(CS_PIN, HIGH);
 }
 
-int epd_if_init(void) {
+int epd_if_Init(void) {
     DDRB |= (1<<PB3) | (1<<PB5) | (1<<PB2);
     DDRD |= (1<<PD7) | (1<<PD6);
     DDRD &= ~(1<<PD5);

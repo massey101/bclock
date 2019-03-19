@@ -7,7 +7,7 @@
 #include <string.h>
 
 #include "uart.h"
-#include "epd2in13b.h"
+#include "epd2in13.h"
 #include "epdpaint.h"
 #include "ds3231.h"
 #include "alarms.h"
@@ -133,7 +133,7 @@ void set_date() {
     ds3231_set(&date);
 }
 
-void show_time(struct epd * epd, struct paint * paint, datetime_t * datetime) {
+void show_time(struct paint * paint, datetime_t * datetime) {
     char time_text[16];
     char date_text[16];
     sprintf(
@@ -153,10 +153,9 @@ void show_time(struct epd * epd, struct paint * paint, datetime_t * datetime) {
     paint_SetHeight(paint, 130);
     paint_Clear(paint, UNCOLORED);
     paint_DrawStringAt(paint, 0, 0, time_text, &Courier_New24, 2, COLORED);
-    epd_set_partial_window_black(
-        epd,
+    epd_SetFrameMemory(
         paint_GetImage(paint),
-        epd->width - paint->width-2,
+        epd_GetWidth() - paint_GetWidth(paint)-2,
         8,
         paint_GetWidth(paint),
         paint_GetHeight(paint)
@@ -164,20 +163,18 @@ void show_time(struct epd * epd, struct paint * paint, datetime_t * datetime) {
     paint_SetWidth(paint, 24);
     paint_Clear(paint, UNCOLORED);
     paint_DrawStringAt(paint, 0, 0, datetime_DOW[datetime->dow], &Courier_New24, 1, COLORED);
-    epd_set_partial_window_black(
-        epd,
+    epd_SetFrameMemory(
         paint_GetImage(paint),
-        epd->width - paint->width-45,
+        epd_GetWidth() - paint_GetWidth(paint)-45,
         8,
         paint_GetWidth(paint),
         paint_GetHeight(paint)
     );
     paint_Clear(paint, UNCOLORED);
     paint_DrawStringAt(paint, 0, 0, date_text, &Courier_New24, 1, COLORED);
-    epd_set_partial_window_black(
-        epd,
+    epd_SetFrameMemory(
         paint_GetImage(paint),
-        epd->width - paint->width-70,
+        epd_GetWidth() - paint_GetWidth(paint)-70,
         8,
         paint_GetWidth(paint),
         paint_GetHeight(paint)
@@ -185,7 +182,6 @@ void show_time(struct epd * epd, struct paint * paint, datetime_t * datetime) {
 }
 
 void draw_alarm(
-    struct epd * epd,
     struct paint * paint,
     int x,
     int y,
@@ -227,10 +223,9 @@ void draw_alarm(
         paint_DrawStringAt(paint, w+2, 8, alarm_DOW, &Courier_New12, 1, COLORED);
     }
 
-    epd_set_partial_window_black(
-        epd,
+    epd_SetFrameMemory(
         paint_GetImage(paint),
-        epd->width - paint_GetWidth(paint) - y,
+        epd_GetWidth() - paint_GetWidth(paint) - y,
         x,
         paint_GetWidth(paint),
         paint_GetHeight(paint)
@@ -239,14 +234,13 @@ void draw_alarm(
 
 
 void draw_alarms(
-    struct epd * epd,
     struct paint * paint,
     int x,
     int y,
     alarm_t * alarms
 ) {
     for (int i = 0; i < NUM_ALARMS; i++) {
-        draw_alarm(epd, paint, x, y + i*24, &alarms[i]);
+        draw_alarm(paint, x, y + i*24, &alarms[i]);
     }
 }
 
@@ -257,9 +251,11 @@ void alarm_cb(void * ctx) {
         return;
     }
 
-    if (audio_direction_toggle >= 1) {
-        audio_to_play = &snd_buzzer;
-        audio_delay = 200;
+    if (audio_direction_toggle >= 10) {
+        clear_alarms(alarms);
+        return;
+        // audio_to_play = &snd_buzzer;
+        // audio_delay = 200;
     }
 
     if (audio_direction_toggle >= 60) {
@@ -290,7 +286,6 @@ int main(void)
     datetime_t last_date = {0};
     datetime_t date;
     unsigned char canvas[1024];
-    struct epd epd;
     struct paint paint;
     uint8_t alarm_already_active;
 
@@ -301,13 +296,13 @@ int main(void)
     printf("init\n");
     ds3231_init();
     pcm_audio_init();
-    epd_init(&epd);
+    epd_Init(lut_full_update);
     paint_init(&paint, canvas, 0, 0);
 
     paint_SetRotate(&paint, ROTATE_90);
 
     // Reset with all white
-    epd_clear_frame_memory(&epd);
+    epd_ClearFrameMemory(0xff);
 
     init_alarms(alarms);
     alarms[0].set = 1;
@@ -321,10 +316,10 @@ int main(void)
     alarms[1].dow = 0xc0;
 
     alarms[2].set = 1;
-    alarms[2].hour = 2;
-    alarms[2].minute = 37;
+    alarms[2].hour = 11;
+    alarms[2].minute = 31;
     alarms[2].dow = 0xff;
-    alarms[2].active = 1;
+    // alarms[2].active = 1;
 
 #ifdef RESET_DATE
     set_date();
@@ -341,12 +336,12 @@ int main(void)
         ) {
             alarm_already_active = activated_alarms(alarms);
             check_alarms(alarms, &date);
-            epd_init(&epd);
-            epd_clear_frame_memory(&epd);
-            draw_alarms(&epd, &paint, 145, 8, alarms);
-            show_time(&epd, &paint, &date);
-            epd_display_frame(&epd);
-            epd_sleep(&epd);
+            epd_Init(lut_full_update);
+            epd_ClearFrameMemory(0xff);
+            draw_alarms(&paint, 145, 8, alarms);
+            show_time(&paint, &date);
+            epd_DisplayFrame();
+            epd_Sleep();
             if (activated_alarms(alarms) && !alarm_already_active) {
                 printf("Activating alarm!");
                 start_alarm();

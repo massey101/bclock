@@ -30,7 +30,7 @@ OBJS = \
 	$(OBJ)/uart.o \
 	$(OBJ)/ds3231.o \
 	$(OBJ)/twi.o \
-	$(OBJ)/epd2in13b.o \
+	$(OBJ)/epd2in13.o \
 	$(OBJ)/epdif.o \
 	$(OBJ)/epdpaint.o \
 	$(OBJ)/alarms.o \
@@ -45,7 +45,7 @@ DEPS = \
 	$(SRC)/uart.h \
 	$(SRC)/ds3231.h \
 	$(SRC)/twi.h \
-	$(SRC)/epd2in13b.h \
+	$(SRC)/epd2in13.h \
 	$(SRC)/epdif.h \
 	$(SRC)/epdpaint.h \
 	$(SRC)/alarms.h \
