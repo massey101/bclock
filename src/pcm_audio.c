@@ -20,8 +20,8 @@ static volatile uint16_t sample_i;
 static volatile uint8_t current_sample;
 static volatile uint8_t first_sample;
 static const struct pcm_audio * volatile current_audio;
-static void (* volatile done_cb)(volatile void * volatile ctx);
-static volatile void * volatile done_cb_ctx;
+static cb_t done_cb;
+static pctx_t done_cb_ctx;
 static volatile enum pcm_mode current_mode;
 
 
@@ -149,8 +149,8 @@ void pcm_audio_init() {
 
 void pcm_audio_play(
     const struct pcm_audio * pcm_audio,
-    void (* volatile _done_cb)(volatile void * volatile ctx),
-    volatile void * volatile _done_cb_ctx
+    cb_t _done_cb,
+    pctx_t _done_cb_ctx
 ) {
     // Set up Timer 1 to send a sample every interrupt.
 

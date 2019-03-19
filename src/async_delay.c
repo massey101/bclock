@@ -2,9 +2,9 @@
 #include "async_delay.h"
 
 
-void (* volatile func)(volatile void * volatile ctx);
-volatile void * volatile func_ctx;
-volatile uint16_t ms;
+static cb_t func;
+static pctx_t func_ctx;
+static volatile uint16_t ms;
 
 
 ISR(TIMER0_COMPA_vect) {
@@ -29,8 +29,8 @@ void async_delay_stop() {
 
 void async_delay_ms(
     uint16_t _ms,
-    void (* volatile _func)(volatile void * volatile ctx),
-    volatile void * volatile _func_ctx
+    cb_t _func,
+    pctx_t _func_ctx
 ) {
 
     ms = _ms;

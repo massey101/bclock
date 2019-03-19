@@ -3,7 +3,7 @@
 
 #include "pcm_audio.h"
 
-extern struct pcm_audio snd_wakeup_call;
-extern struct pcm_audio snd_buzzer;
+extern const struct pcm_audio snd_wakeup_call;
+extern const struct pcm_audio snd_buzzer;
 
 #endif // SOUNDS_H

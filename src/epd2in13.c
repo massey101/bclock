@@ -35,7 +35,7 @@ volatile unsigned int reset_pin;
 volatile unsigned int dc_pin;
 volatile unsigned int cs_pin;
 volatile unsigned int busy_pin;
-volatile const unsigned char* lut;
+const unsigned char* volatile lut;
 
 
 int epd_Init(const unsigned char* _lut) {

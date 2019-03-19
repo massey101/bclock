@@ -909,7 +909,7 @@ const uint8_t snd_wakeup_call_data[] PROGMEM = {
     0x89, 0x86, 0x86,
 };
 
-struct pcm_audio snd_wakeup_call = {
+const struct pcm_audio snd_wakeup_call = {
     5500,
     10803,
     snd_wakeup_call_data

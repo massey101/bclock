@@ -217,7 +217,7 @@ const uint8_t snd_buzzer_data[] PROGMEM = {
     0x7f, 0x7f, 0x80, 0x80, 0x80, 0x80,
 };
 
-struct pcm_audio snd_buzzer = {
+const struct pcm_audio snd_buzzer = {
     8000,
     2502,
     snd_buzzer_data
