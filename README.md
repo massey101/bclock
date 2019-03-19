@@ -11,6 +11,26 @@ Goals:
   * No annoying lights that make it difficult to sleep.
   * Be cool
 
+## Progress
+One battery powered clock on a breadboard with an epaper display, a RTC, and a very quiet speaker. Uses a full 3mA which gives about 1 month per AA sized 2000mAh Ni-MH battery.
+
+## TODO
+
+Goals:
+
+  * Add buttons to set time and alarms
+  * Amp circuit
+  * Manufacture on veroboard
+  * Case to contain the board in
+  * Reduce power consumption further
+
+Stretch Goals:
+
+  * SD card music library
+  * Manufacture on PCB
+  * Usage documentation
+  * The ability to detect low battery (kind of important)
+
 ## Dependencies
 
   * avr-gcc
