@@ -16,6 +16,7 @@
 
 #include <stdint.h>
 #include <avr/pgmspace.h>
+#include "callbacks.h"
 
 struct pcm_audio {
     const uint16_t sample_rate;
@@ -24,7 +25,11 @@ struct pcm_audio {
 };
 
 void pcm_audio_init();
-void pcm_audio_play(struct pcm_audio * pcm_audio, uint8_t reverse, void (*_done_cb)());
+void pcm_audio_play(
+    const struct pcm_audio * pcm_audio,
+    cb_t _done_cb,
+    pctx_t _done_cb_ctx
+);
 void pcm_audio_stop();
 uint8_t pcm_audio_busy();
 

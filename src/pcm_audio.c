@@ -16,21 +16,17 @@ enum pcm_mode {
     STOPPING
 };
 
-volatile uint16_t sample_i;
-volatile uint8_t first_sample;
-volatile uint8_t last_sample;
-volatile uint8_t current_sample;
-volatile struct pcm_audio * current_audio;
-volatile uint8_t reverse;
-volatile void (*done_cb)(void);
-volatile enum pcm_mode current_mode;
+static volatile uint16_t sample_i;
+static volatile uint8_t current_sample;
+static volatile uint8_t first_sample;
+static const struct pcm_audio * volatile current_audio;
+static void (* volatile done_cb)(volatile void * volatile ctx);
+static volatile void * volatile done_cb_ctx;
+static volatile enum pcm_mode current_mode;
 
 
-uint8_t pcm_audio_get_sample(struct pcm_audio * pcm_audio, uint16_t i, uint8_t reverse) {
-    if (reverse) {
-        i = pcm_audio->length - i - 1;
-    }
-    return pgm_read_byte(&pcm_audio->data[i]);
+uint8_t pcm_audio_get_sample(uint16_t i) {
+    return pgm_read_byte(&current_audio->data[i]);
 }
 
 
@@ -68,7 +64,7 @@ ISR(TIMER1_COMPA_vect) {
     if (current_mode == PLAYING) {
         // Move through the file and play each sample. Once we reach the end
         // start pausing and notify the caller that we have finished.
-        current_sample = pcm_audio_get_sample(current_audio, sample_i, reverse);
+        current_sample = pcm_audio_get_sample(sample_i);
         OCR2B = current_sample;
         sample_i++;
 
@@ -76,7 +72,7 @@ ISR(TIMER1_COMPA_vect) {
             current_mode = FINISHING;
             current_audio = 0;
             if (done_cb != 0) {
-                done_cb();
+                done_cb(done_cb_ctx);
             }
         }
     }
@@ -86,7 +82,7 @@ ISR(TIMER1_COMPA_vect) {
         // paused.
         if (current_sample > PCM_MIDDLE) {
             current_sample--;
-        } else if (last_sample < PCM_MIDDLE) {
+        } else if (current_sample < PCM_MIDDLE) {
             current_sample++;
         }
 
@@ -106,7 +102,7 @@ ISR(TIMER1_COMPA_vect) {
         // paused.
         if (current_sample > PCM_LOW) {
             current_sample--;
-        } else if (last_sample < PCM_LOW) {
+        } else if (current_sample < PCM_LOW) {
             current_sample++;
         }
 
@@ -151,7 +147,11 @@ void pcm_audio_init() {
 };
 
 
-void pcm_audio_play(struct pcm_audio * pcm_audio, uint8_t _reverse, void (*_done_cb)()) {
+void pcm_audio_play(
+    const struct pcm_audio * pcm_audio,
+    void (* volatile _done_cb)(volatile void * volatile ctx),
+    volatile void * volatile _done_cb_ctx
+) {
     // Set up Timer 1 to send a sample every interrupt.
 
     cli();
@@ -177,11 +177,11 @@ void pcm_audio_play(struct pcm_audio * pcm_audio, uint8_t _reverse, void (*_done
     // Enable the PWM timer.
     TCCR2B |= _BV(CS10);
 
-    reverse = _reverse;
     sample_i = 0;
-    first_sample = pcm_audio_get_sample(pcm_audio, 0, reverse);
     current_audio = pcm_audio;
+    first_sample = pcm_audio_get_sample(0);
     done_cb = _done_cb;
+    done_cb_ctx = _done_cb_ctx;
     current_mode = STARTING;
     sei();
 }

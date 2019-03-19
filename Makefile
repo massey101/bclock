@@ -52,6 +52,7 @@ DEPS = \
 	$(SRC)/sounds.h \
 	$(SRC)/pcm_audio.h \
 	$(SRC)/async_delay.h \
+	$(SRC)/callbacks.h \
 	$(SRC)/img_bell.h \
 	$(SRC)/img_bell_ringing.h \
 	$(SRC)/fonts.h

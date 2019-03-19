@@ -2,8 +2,8 @@
 #include "async_delay.h"
 
 
-volatile void (*func)();
-volatile void * func_ctx;
+void (* volatile func)(volatile void * volatile ctx);
+volatile void * volatile func_ctx;
 volatile uint16_t ms;
 
 
@@ -27,7 +27,11 @@ void async_delay_stop() {
 }
 
 
-void async_delay_ms(uint16_t _ms, void * _func_ctx, void (*_func)(void * ctx)) {
+void async_delay_ms(
+    uint16_t _ms,
+    void (* volatile _func)(volatile void * volatile ctx),
+    volatile void * volatile _func_ctx
+) {
 
     ms = _ms;
     func_ctx = _func_ctx;

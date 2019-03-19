@@ -22,12 +22,6 @@
 #define UNCOLORED 1
 
 
-static volatile alarm_t alarms[NUM_ALARMS];
-static volatile uint8_t audio_direction_toggle;
-static volatile struct pcm_audio * audio_to_play;
-static volatile uint16_t audio_delay;
-
-
 uint8_t BCDtoDEC(uint8_t bcd_val) {
     return (((bcd_val >> 4) * 10) + (bcd_val & 0x0F));
 }
@@ -186,7 +180,7 @@ void draw_alarm(
     struct paint * paint,
     int x,
     int y,
-    alarm_t * alarm
+    valarm_t * alarm
 ) {
     if (!alarm->set) {
         return;
@@ -238,47 +232,11 @@ void draw_alarms(
     struct paint * paint,
     int x,
     int y,
-    alarm_t * alarms
+    valarm_t * alarms
 ) {
     for (int i = 0; i < NUM_ALARMS; i++) {
         draw_alarm(paint, x, y + i*24, &alarms[i]);
     }
-}
-
-void wait_cb();
-
-void alarm_cb(void * ctx) {
-    if (!activated_alarms(alarms)) {
-        return;
-    }
-
-    if (audio_direction_toggle >= 10) {
-        clear_alarms(alarms);
-        return;
-        // audio_to_play = &snd_buzzer;
-        // audio_delay = 200;
-    }
-
-    if (audio_direction_toggle >= 60) {
-        clear_alarms(alarms);
-        return;
-    }
-
-    pcm_audio_play(audio_to_play, 0, &wait_cb);
-    audio_direction_toggle++;
-}
-
-void wait_cb() {
-    pcm_audio_stop();
-    async_delay_ms(audio_delay, 0, &alarm_cb);
-}
-
-
-void start_alarm() {
-    audio_direction_toggle = 0;
-    audio_to_play = &snd_wakeup_call;
-    audio_delay = 5000;
-    pcm_audio_play(audio_to_play, 0, &wait_cb);
 }
 
 
@@ -286,6 +244,7 @@ int main(void)
 {
     datetime_t last_date = {0};
     datetime_t date;
+    valarm_t alarms[NUM_ALARMS];
     unsigned char canvas[1024];
     struct paint paint;
     uint8_t alarm_already_active;
@@ -354,7 +313,7 @@ int main(void)
             lut = lut_partial_update;
             if (activated_alarms(alarms) && !alarm_already_active) {
                 printf("Activating alarm!");
-                start_alarm();
+                start_alarm(alarms);
             }
             memcpy(&last_date, &date, sizeof(date));
         }
