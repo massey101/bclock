@@ -42,7 +42,6 @@
 int epd_if_Init(void);
 void epd_if_DigitalWrite(int pin, int value);
 int epd_if_DigitalRead(int pin);
-void epd_if_DelayMs(unsigned int delaytime);
 void epd_if_SpiTransfer(unsigned char data);
 
 #endif
