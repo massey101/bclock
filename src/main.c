@@ -181,6 +181,7 @@ void show_time(struct paint * paint, datetime_t * datetime) {
     );
 }
 
+
 void draw_alarm(
     struct paint * paint,
     int x,
@@ -288,6 +289,7 @@ int main(void)
     unsigned char canvas[1024];
     struct paint paint;
     uint8_t alarm_already_active;
+    const unsigned char * lut;
 
     /* init */
     uart_init(38400);
@@ -296,13 +298,12 @@ int main(void)
     printf("init\n");
     ds3231_init();
     pcm_audio_init();
-    epd_Init(lut_full_update);
+    lut = lut_full_update;
+    epd_Init(lut);
+    epd_Sleep();
     paint_init(&paint, canvas, 0, 0);
 
     paint_SetRotate(&paint, ROTATE_90);
-
-    // Reset with all white
-    epd_ClearFrameMemory(0xff);
 
     init_alarms(alarms);
     alarms[0].set = 1;
@@ -334,14 +335,23 @@ int main(void)
             date.hours != last_date.hours || \
             date.minutes != last_date.minutes
         ) {
+            if (
+                date.year != last_date.year || \
+                date.month != last_date.month || \
+                date.day != last_date.day || \
+                date.hours != last_date.hours
+            ) {
+                lut = lut_full_update;
+            }
             alarm_already_active = activated_alarms(alarms);
             check_alarms(alarms, &date);
-            epd_Init(lut_full_update);
+            epd_Init(lut);
             epd_ClearFrameMemory(0xff);
             draw_alarms(&paint, 145, 8, alarms);
             show_time(&paint, &date);
             epd_DisplayFrame();
             epd_Sleep();
+            lut = lut_partial_update;
             if (activated_alarms(alarms) && !alarm_already_active) {
                 printf("Activating alarm!");
                 start_alarm();
