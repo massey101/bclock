@@ -26,7 +26,7 @@ def main():
     output_file.write("#define _%s_\n\n" % include_guard)
     output_file.write("#include <avr/pgmspace.h>\n\n")
     output_file.write("static const uint8_t PROGMEM %s[] = {\n" % variable_name)
-    output_file.write("    0x%x, 0x%x,\n" % (width, height))
+    output_file.write("    0x{:02x}, 0x{:02x},\n".format(width, height))
 
     bit_pos = 0
     bits = 0
