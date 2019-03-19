@@ -36,6 +36,7 @@ OBJS = \
 	$(OBJ)/alarms.o \
 	$(OBJ)/pcm_audio.o \
 	$(OBJ)/async_delay.o \
+	$(OBJ)/view.o \
 	$(OBJ)/snd_wakeup_call.o \
 	$(OBJ)/snd_buzzer.o \
 	$(OBJ)/Courier_New12.o \
@@ -53,6 +54,7 @@ DEPS = \
 	$(SRC)/pcm_audio.h \
 	$(SRC)/async_delay.h \
 	$(SRC)/callbacks.h \
+	$(SRC)/view.h \
 	$(SRC)/img_bell.h \
 	$(SRC)/img_bell_ringing.h \
 	$(SRC)/fonts.h
