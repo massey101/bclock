@@ -14,22 +14,15 @@
 
 #include <stdio.h>
 #include <stdint.h>
-#include "callbacks.h"
 
 FILE uart_stdout;
 FILE uart_input;
 FILE uart_io;
 
-typedef struct {
-    char data;
-    pctx_t ctx;
-} uart_ctx_t;
-
-typedef volatile uart_ctx_t vuart_ctx_t;
-
+typedef void (*uart_cb_t)(char input);
 
 void uart_init(uint32_t baud);
-void uart_init_interrupt(uint32_t baud, cb_t cb, vuart_ctx_t * ctx);
+void uart_init_interrupt(uint32_t baud, uart_cb_t cb);
 char uart_getc(void);
 void uart_sendc(char data);
 int uart_getchar(FILE * stream);

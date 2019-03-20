@@ -5,16 +5,16 @@
 
 
 // Define our callbacks and their parameters
-typedef async_ctx struct {
+typedef volatile struct {
     uint16_t counter;
-    uint16_t delay;
+    uint32_t delay;
     const struct pcm_audio * audio_to_play;
     valarm_t * alarms;
-} alarm_ctx_t;
+} valarm_ctx_t;
 
-alarm_ctx_t ctx;
-void wait_alarm_cb(pctx_t pctx);
-void play_tone_alarm_cb(pctx_t pctx);
+valarm_ctx_t ctx;
+void wait_alarm_cb(uint32_t real_ms);
+void play_tone_alarm_cb(uint32_t real_ms);
 
 
 // Global variables stored in EEPROM
@@ -92,7 +92,7 @@ uint8_t check_alarm(valarm_t * alarm, vdatetime_t * date) {
  * This callback will play a tone up to 20 times and will call wait_alarm_cb
  * when it has completed.
  */
-void play_tone_alarm_cb(pctx_t pctx) {
+void play_tone_alarm_cb(uint32_t real_ms) {
     if (!activated_alarms(ctx.alarms)) {
         return;
     }
@@ -104,20 +104,20 @@ void play_tone_alarm_cb(pctx_t pctx) {
     }
 
     ctx.counter++;
-    pcm_audio_play(ctx.audio_to_play, &wait_alarm_cb, pctx);
+    pcm_audio_play(ctx.audio_to_play, &wait_alarm_cb);
 }
 
 
 /**
  * This callback will start an async delay to play the next tone.
  */
-void wait_alarm_cb(pctx_t pctx) {
+void wait_alarm_cb(uint32_t real_ms) {
     pcm_audio_stop();
     if (!activated_alarms(ctx.alarms)) {
         return;
     }
 
-    async_delay_ms(ctx.delay, &play_tone_alarm_cb, pctx);
+    async_delay_ms(ctx.delay, &play_tone_alarm_cb);
 }
 
 

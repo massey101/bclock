@@ -35,6 +35,8 @@ volatile unsigned int reset_pin;
 volatile unsigned int dc_pin;
 volatile unsigned int cs_pin;
 volatile unsigned int busy_pin;
+volatile unsigned int busy;
+volatile unsigned int asleep;
 const unsigned char* volatile lut;
 
 
@@ -45,6 +47,8 @@ int epd_Init(const unsigned char* _lut) {
     busy_pin = BUSY_PIN;
     width = EPD_WIDTH;
     height = EPD_HEIGHT;
+    busy = 0;
+    asleep = 0;
     lut = _lut;
 
     // this calls the peripheral hardware interface, see epdif
@@ -92,12 +96,54 @@ void epd_SendData(unsigned char data) {
 }
 
 
+int busy_cb(int value) {
+    if (busy && value == 0) {
+        busy = 0;
+        return 1;
+    }
+
+    return 0;
+}
+
+
 /**
  *  @brief: Wait until the busy_pin goes LOW
  */
 void epd_WaitUntilIdle(void) {
+    if (epd_if_DigitalRead(busy_pin) == LOW) {
+        return;
+    }
+    busy = 1;
+    // Wait for interrupt on PIN PCINT21 and confirm that it is low
     // LOW: idle, HIGH: busy
-    while(epd_if_DigitalRead(busy_pin) == HIGH);
+    epd_if_enable_busy_interrupt(&busy_cb);
+    if (epd_if_DigitalRead(busy_pin) == LOW) {
+        busy = 0;
+        epd_if_disable_busy_interrupt();
+        return;
+    }
+}
+
+
+/**
+ *  @brief: Wait until the busy_pin goes LOW
+ */
+void epd_WaitUntilIdleShort(void) {
+    busy = 1;
+    // Wait for interrupt on PIN PCINT21 and confirm that it is low
+    // LOW: idle, HIGH: busy
+    while (epd_if_DigitalRead(busy_pin) == HIGH);
+    busy = 0;
+}
+
+
+int epd_IsBusy(void) {
+    return busy;
+}
+
+
+int epd_IsAsleep(void) {
+    return asleep;
 }
 
 
@@ -274,7 +320,7 @@ void epd_SetMemoryPointer(int x, int y) {
     epd_SendCommand(SET_RAM_Y_ADDRESS_COUNTER);
     epd_SendData(y & 0xFF);
     epd_SendData((y >> 8) & 0xFF);
-    epd_WaitUntilIdle();
+    epd_WaitUntilIdleShort();
 }
 
 
@@ -285,6 +331,7 @@ void epd_SetMemoryPointer(int x, int y) {
  *          You can use epd_Init() to awaken
  */
 void epd_Sleep() {
+    asleep = 1;
     epd_SendCommand(DEEP_SLEEP_MODE);
     epd_SendData(0x01);
 }

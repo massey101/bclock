@@ -16,7 +16,8 @@
 
 #include <stdint.h>
 #include <avr/pgmspace.h>
-#include "callbacks.h"
+
+typedef void (* volatile pcm_audio_cb_t)(uint32_t real_ms);
 
 struct pcm_audio {
     const uint16_t sample_rate;
@@ -27,8 +28,7 @@ struct pcm_audio {
 void pcm_audio_init();
 void pcm_audio_play(
     const struct pcm_audio * pcm_audio,
-    cb_t _done_cb,
-    pctx_t _done_cb_ctx
+    pcm_audio_cb_t _done_cb
 );
 void pcm_audio_stop();
 uint8_t pcm_audio_busy();

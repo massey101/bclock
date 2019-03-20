@@ -63,6 +63,8 @@ extern const unsigned char lut_partial_update[];
 
 
 int epd_Init(const unsigned char* lut);
+int epd_IsBusy();
+int epd_IsAsleep();
 void epd_SendCommand(unsigned char command);
 void epd_SendData(unsigned char data);
 void epd_WaitUntilIdle();

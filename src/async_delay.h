@@ -2,13 +2,13 @@
 #define ASYNC_DLEAY_H
 
 #include <stdint.h>
-#include "callbacks.h"
+
+typedef void (* volatile async_delay_cb_t)(uint32_t real_ms);
 
 
 void async_delay_ms(
-    uint16_t ms,
-    cb_t _func,
-    pctx_t func_ctx
+    uint32_t ms,
+    async_delay_cb_t _func
 );
 void async_delay_stop();
 void async_delay_trigger();

@@ -15,20 +15,20 @@ volatile uint8_t selected_alarm;
 static vdatetime_t * current_datetime;
 static vdatetime_t * last_datetime;
 static valarm_t * alarms;
-void (*force_redraw_now)(uint8_t full_update);
+void (*force_redraw_func)(uint8_t full_update);
 
 
 void ui_init(
     vdatetime_t * _current_datetime,
     vdatetime_t * _last_datetime,
     valarm_t * _alarms,
-    void (*_force_redraw_now)(uint8_t full_update)
+    void (*_force_redraw_func)(uint8_t full_update)
 ) {
     current_datetime = _current_datetime;
     last_datetime = _last_datetime;
     alarms = _alarms;
     current_state = DISPLAY;
-    force_redraw_now = _force_redraw_now;
+    force_redraw_func= _force_redraw_func;
 }
 
 
@@ -118,7 +118,7 @@ enum screen_state multi_input(
 
 
 void ui_input(char input) {
-    uint8_t force_redraw = 1;
+    uint8_t ui_force_redraw = 1;
 
     if (input == 's') {
         printf("Stopping alarm\n");
@@ -141,7 +141,7 @@ void ui_input(char input) {
                 case 'r':
                     printf("Setting force_redraw\n");
                     current_state = current_state;
-                    force_redraw = 2;
+                    ui_force_redraw = 2;
                     break;
             }
             break;
@@ -247,7 +247,7 @@ void ui_input(char input) {
             break;
     }
 
-    printf("UI GOT: %d Now: %d\n", input, current_state);
+    printf("UI GOT: %d Now: %d frn: %p fr: %d\n", input, current_state, force_redraw_func, ui_force_redraw);
 
-    force_redraw_now(force_redraw - 1);
+    force_redraw_func(ui_force_redraw - 1);
 }

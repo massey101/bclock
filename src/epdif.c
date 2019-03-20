@@ -26,6 +26,7 @@
  */
 
 #include <util/delay.h>
+#include <avr/interrupt.h>
 
 #include "epdif.h"
 
@@ -33,6 +34,9 @@
 // RESET = PD7
 // DC = PD6
 // BUSY = PD5
+
+static epdif_busy_cb_t busy_cb = 0;
+
 
 void epd_if_DigitalWrite(int pin, int value) {
     if (pin == RST_PIN) {
@@ -65,6 +69,7 @@ void epd_if_DigitalWrite(int pin, int value) {
     }
 }
 
+
 int epd_if_DigitalRead(int pin) {
     if (pin == RST_PIN) {
         return (PIND & (1<<PD7)) >> PD7;
@@ -81,6 +86,7 @@ int epd_if_DigitalRead(int pin) {
     return -1;
 }
 
+
 void epd_if_SpiTransfer(unsigned char data) {
     epd_if_DigitalWrite(CS_PIN, LOW);
     SPDR = data;
@@ -88,11 +94,40 @@ void epd_if_SpiTransfer(unsigned char data) {
     epd_if_DigitalWrite(CS_PIN, HIGH);
 }
 
-int epd_if_Init(void) {
+
+int epd_if_Init() {
     DDRB |= (1<<PB3) | (1<<PB5) | (1<<PB2);
     DDRD |= (1<<PD7) | (1<<PD6);
     DDRD &= ~(1<<PD5);
     SPCR |= (1<<SPE) | (1<<MSTR) | (1<<SPR0);
     PORTB |= (1<<PB2);
     return 0;
+}
+
+
+ISR(PCINT2_vect) {
+    if (busy_cb) {
+        int value = epd_if_DigitalRead(BUSY_PIN);
+        epdif_busy_cb_t temp_busy_cb = busy_cb;
+        busy_cb = 0;
+        if (temp_busy_cb(value)) {
+            epd_if_disable_busy_interrupt();
+        }
+    }
+}
+
+
+void epd_if_enable_busy_interrupt(epdif_busy_cb_t _busy_cb) {
+    busy_cb = _busy_cb;
+
+    // The reset pin is on pin D7 which corrosponds to PCINT21
+    PCICR |= (1<<PCIE2);
+    PCMSK2 |= (1<<PCINT21);
+    sei();
+}
+
+void epd_if_disable_busy_interrupt() {
+    PCMSK2 &= ~(1<<PCINT21);
+    PCICR &= ~(1<<PCIE2);
+    busy_cb = 0;
 }

@@ -39,9 +39,13 @@
 #define LOW 0
 #define HIGH 1
 
+typedef int (* volatile epdif_busy_cb_t)(int value);
+
 int epd_if_Init(void);
 void epd_if_DigitalWrite(int pin, int value);
 int epd_if_DigitalRead(int pin);
 void epd_if_SpiTransfer(unsigned char data);
+void epd_if_enable_busy_interrupt(epdif_busy_cb_t _busy_cb);
+void epd_if_disable_busy_interrupt();
 
 #endif

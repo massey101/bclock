@@ -2,7 +2,6 @@
 #define ALARMS_H
 
 #include <stdint.h>
-#include "callbacks.h"
 #include "ds3231.h"
 
 

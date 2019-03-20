@@ -2,18 +2,17 @@
 #include "async_delay.h"
 
 
-static cb_t func;
-static pctx_t func_ctx;
-static volatile uint16_t ms;
+static async_delay_cb_t func;
+static volatile uint32_t ms;
+static volatile uint32_t real_ms;
 
 
 ISR(TIMER0_COMPA_vect) {
     if (ms == 0) {
-        cb_t temp_func = func;
-        pctx_t temp_func_ctx = func_ctx;
+        async_delay_cb_t temp_func = func;
         async_delay_stop();
         if (temp_func != 0) {
-            temp_func(temp_func_ctx);
+            temp_func(real_ms);
         }
     }
     ms--;
@@ -21,6 +20,7 @@ ISR(TIMER0_COMPA_vect) {
 
 
 void async_delay_trigger() {
+    real_ms = real_ms - ms + 10;
     ms = 10;
 }
 
@@ -36,12 +36,11 @@ void async_delay_stop() {
 
 
 void async_delay_ms(
-    uint16_t _ms,
-    cb_t _func,
-    pctx_t _func_ctx
+    uint32_t _ms,
+    async_delay_cb_t _func
 ) {
     ms = _ms;
-    func_ctx = _func_ctx;
+    real_ms = _ms;
     func = _func;
 
     // Set CTC mode (Clear timer on Compare Match)

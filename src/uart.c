@@ -23,9 +23,7 @@ FILE uart_io = FDEV_SETUP_STREAM(
 );
 
 
-static cb_t g_cb;
-static vuart_ctx_t * g_ctx;
-
+static uart_cb_t g_cb;
 
 void uart_init(uint32_t baud) {
     /* Set Baud rate */
@@ -39,11 +37,10 @@ void uart_init(uint32_t baud) {
 }
 
 
-void uart_init_interrupt(uint32_t baud, cb_t cb, vuart_ctx_t * ctx) {
+void uart_init_interrupt(uint32_t baud, uart_cb_t cb) {
     uart_init(baud);
 
     g_cb = cb;
-    g_ctx = ctx;
 
     /* Enable the RX interrupt */
     UCSR0B |= (1<<RXCIE0);
@@ -56,9 +53,7 @@ ISR(USART_RX_vect) {
 
     /* Ensure we have a callback function */
     if (g_cb != 0) {
-        g_ctx->data = data;
-
-        g_cb((pctx_t) g_ctx);
+        g_cb(data);
     }
 }
 
