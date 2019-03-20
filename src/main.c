@@ -18,112 +18,12 @@
 #include "ui.h"
 
 
-uint8_t BCDtoDEC(uint8_t bcd_val) {
-    return (((bcd_val >> 4) * 10) + (bcd_val & 0x0F));
-}
-
-
-uint8_t get_bcd_char(uint8_t * result) {
-    *result = getchar();
-    if (*result < 0x30 || *result > 0x39) {
-        return 0xff;
-    }
-
-    printf("%c", *result);
-    *result -= 0x30;
-
-    return 0x00;
-}
-
-uint8_t get_bcd(uint8_t * result, uint8_t length) {
-    if (length % 2 != 0) {
-        return 0xff;
-    }
-
-    for (uint8_t i = 0; i < length; i++) {
-        uint8_t input;
-        if(get_bcd_char(&input)) {
-            return 0xff;
-        }
-
-        if (i % 2 == 0) {
-            result[i/2] = input << 4;
-        } else {
-            result[i/2] |= input;
-        }
-    }
-
-    return 0x00;
-}
-
-
-void set_date() {
-    datetime_t date;
-    uint8_t retval;
-
-    printf("hour: ");
-    retval = get_bcd(&date.hours, 2);
-    printf("\n");
-    if (retval) {
-        return;
-    }
-
-    printf("minute: ");
-    retval = get_bcd(&date.minutes, 2);
-    printf("\n");
-    if (retval) {
-        return;
-    }
-
-    printf("second: ");
-    retval = get_bcd(&date.seconds, 2);
-    printf("\n");
-    if (retval) {
-        return;
-    }
-
-    uint8_t year_small;
-
-    printf("year: ");
-    retval = get_bcd(&year_small, 2);
-    printf("\n");
-    if (retval) {
-        return;
-    }
-
-    printf("month: ");
-    retval = get_bcd(&date.month, 2);
-    printf("\n");
-    if (retval) {
-        return;
-    }
-
-    printf("date: ");
-    retval = get_bcd(&date.day, 2);
-    printf("\n");
-    if (retval) {
-        return;
-    }
-
-    printf("dow: ");
-    retval = get_bcd(&date.dow, 2);
-    printf("\n");
-    if (retval) {
-        return;
-    }
-
-    date.hours = bcd_to_dec(date.hours);
-    date.minutes = bcd_to_dec(date.minutes);
-    date.seconds = bcd_to_dec(date.seconds);
-    date.year = bcd_to_dec(year_small) + 2000;
-    date.month= bcd_to_dec(date.month);
-    date.day = bcd_to_dec(date.day);
-    date.dow = bcd_to_dec(date.dow);
-
-    ds3231_set(&date);
-}
-
 vuart_ctx_t uart_ctx;
+vdatetime_t last_date = {0};
+vdatetime_t date;
+valarm_t alarms[NUM_ALARMS];
+const unsigned char * volatile lut;
+volatile uint8_t force_redraw;
 
 
 void button_pressed(pctx_t pctx) {
@@ -135,17 +35,20 @@ void button_pressed(pctx_t pctx) {
 }
 
 
-int main(void)
-{
-    vdatetime_t last_date = {0};
-    vdatetime_t date;
-    valarm_t alarms[NUM_ALARMS];
-    uint8_t alarm_already_active;
-    const unsigned char * lut;
+void force_redraw_now(uint8_t full_update) {
+    force_redraw = 1;
+    if (full_update) {
+        force_redraw = 2;
+    }
 
+    async_delay_trigger();
+}
+
+
+void setup() {
     /* init */
     uart_ctx.data = 0;
-    uart_ctx.ctx= 0;
+    uart_ctx.ctx = 0;
     uart_init_interrupt(38400, &button_pressed, &uart_ctx);
     stdout = &uart_stdout;
     stdin = &uart_input;
@@ -157,7 +60,7 @@ int main(void)
     epd_Sleep();
 
     view_init();
-    ui_init(&date, &last_date, alarms);
+    ui_init(&date, &last_date, alarms, &force_redraw_now);
 
     init_alarms(alarms);
     alarms[0].set = 1;
@@ -174,66 +77,78 @@ int main(void)
     alarms[2].hour = 12;
     alarms[2].minute = 01;
     alarms[2].dow = 0xff;
-    // alarms[2].active = 1;
+}
 
-#ifdef RESET_DATE
-    set_date();
-#endif
 
-    while (1) {
-        ds3231_get(&date);
-        if (
-            date.year != last_date.year ||
-            date.month != last_date.month ||
-            date.day != last_date.day ||
-            date.hours != last_date.hours ||
-            date.minutes != last_date.minutes ||
-            force_redraw
-        ) {
-            if (
-                date.year != last_date.year ||
-                date.month != last_date.month ||
-                date.day != last_date.day ||
-                date.hours != last_date.hours ||
-                force_redraw == 2
-            ) {
-                printf("Full update\n");
-                lut = lut_full_update;
-            }
-            alarm_already_active = activated_alarms(alarms);
-            check_alarms(alarms, &date);
-            epd_Init(lut);
-            epd_ClearFrameMemory(0xff);
-            view_update(&date, alarms);
-            epd_DisplayFrame();
-            epd_Sleep();
-            lut = lut_partial_update;
-            if (activated_alarms(alarms) && !alarm_already_active) {
-                printf(
-                    "Activating alarm %d %d!\n",
-                    activated_alarms(alarms),
-                    alarm_already_active
-                );
-                start_alarm(alarms);
-            }
-            datetime_copy(&last_date, &date);
-            force_redraw = 0;
+void print_date(vdatetime_t * date) {
+   printf(
+        "%02u:%02u:%02u %04u-%02u-%02u %02u %s\n",
+        date->hour,
+        date->minute,
+        date->second,
+        date->year,
+        date->month,
+        date->day,
+        date->dow,
+        datetime_DOW[date->dow]
+    );
+};
+
+
+void draw_loop(pctx_t pctx) {
+
+    ds3231_get(&date);
+
+    // Update the display. This is only triggered if there is a change in
+    // time or if it is forced to by the ui.
+    if (! datetime_cmp(&date, &last_date, MINUTES) || force_redraw) {
+        printf("Updating display\n");
+
+        // Perform a full update of the screen every hour or when forced to by
+        // the ui.
+        if (! datetime_cmp(&date, &last_date, HOURS) || force_redraw == 2) {
+            printf("Full update\n");
+            lut = lut_full_update;
         }
 
-        printf(
-            "%02u:%02u:%02u %04u-%02u-%02u %02u %s\n",
-            date.hours,
-            date.minutes,
-            date.seconds,
-            date.year,
-            date.month,
-            date.day,
-            date.dow,
-            datetime_DOW[date.dow]
-        );
-
-        _delay_ms(1000);
+        // Update the display and then immediately put it back to sleep.
+        // That part is important.
+        epd_Init(lut);
+        epd_ClearFrameMemory(0xff);
+        view_update(&date, alarms);
+        epd_DisplayFrame();
+        epd_Sleep();
+        lut = lut_partial_update;
+        force_redraw = 0;
     }
+
+    // Check if any alarms need activating.
+    uint8_t alarm_already_active = activated_alarms(alarms);
+    check_alarms(alarms, &date);
+    if (activated_alarms(alarms) && !alarm_already_active) {
+        printf("Activating alarm!\n");
+        start_alarm(alarms);
+    };
+
+    printf("date1: ");
+    print_date(&date);
+    printf("date2: ");
+    print_date(&last_date);
+    printf("\n");
+
+    datetime_copy(&last_date, &date);
+
+    async_delay_ms(1000, &draw_loop, 0);
+}
+
+
+int main(void)
+{
+    setup();
+
+    draw_loop(0);
+
+    while (1);
 
     return 0;
 }

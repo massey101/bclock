@@ -11,6 +11,7 @@ void async_delay_ms(
     pctx_t func_ctx
 );
 void async_delay_stop();
+void async_delay_trigger();
 
 
 #endif // ASYNC_DELAY_H

@@ -97,9 +97,7 @@ void epd_SendData(unsigned char data) {
  */
 void epd_WaitUntilIdle(void) {
     // LOW: idle, HIGH: busy
-    while(epd_if_DigitalRead(busy_pin) == HIGH) {
-        _delay_ms(100);
-    }
+    while(epd_if_DigitalRead(busy_pin) == HIGH);
 }
 
 
@@ -111,9 +109,9 @@ void epd_WaitUntilIdle(void) {
 void epd_Reset(void) {
     // Module reset
     epd_if_DigitalWrite(reset_pin, LOW);
-    _delay_ms(200);
+    _delay_ms(20);
     epd_if_DigitalWrite(reset_pin, HIGH);
-    _delay_ms(200);
+    _delay_ms(20);
 }
 
 

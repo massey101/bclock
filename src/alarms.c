@@ -71,11 +71,11 @@ uint8_t check_alarm(valarm_t * alarm, vdatetime_t * date) {
        return 0;
     }
 
-    if (alarm->hour != date->hours) {
+    if (alarm->hour != date->hour) {
         return 0;
     }
 
-    if (alarm->minute != date->minutes) {
+    if (alarm->minute != date->minute) {
         return 0;
     }
 

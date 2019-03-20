@@ -9,11 +9,19 @@ static volatile uint16_t ms;
 
 ISR(TIMER0_COMPA_vect) {
     if (ms == 0) {
-        if (func != 0) {
-            func(func_ctx);
+        cb_t temp_func = func;
+        pctx_t temp_func_ctx = func_ctx;
+        async_delay_stop();
+        if (temp_func != 0) {
+            temp_func(temp_func_ctx);
         }
     }
     ms--;
+}
+
+
+void async_delay_trigger() {
+    ms = 10;
 }
 
 

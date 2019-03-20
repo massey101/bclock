@@ -31,9 +31,9 @@ void ds3231_init(void) {
 
 void ds3231_set(vdatetime_t * datetime) {
     uint8_t regs[7];
-    regs[0] = dec_to_bcd(datetime->seconds);
-    regs[1] = dec_to_bcd(datetime->minutes);
-    regs[2] = dec_to_bcd(datetime->hours);
+    regs[0] = dec_to_bcd(datetime->second);
+    regs[1] = dec_to_bcd(datetime->minute);
+    regs[2] = dec_to_bcd(datetime->hour);
     regs[3] = datetime->dow;
     regs[4] = dec_to_bcd(datetime->day);
     regs[5] = dec_to_bcd(datetime->month);
@@ -72,9 +72,9 @@ void ds3231_get(vdatetime_t * datetime) {
     }
     twi_stop();
 
-    datetime->seconds = bcd_to_dec(regs[0]);
-    datetime->minutes = bcd_to_dec(regs[1]);
-    datetime->hours = bcd_to_dec(regs[2]);
+    datetime->second = bcd_to_dec(regs[0]);
+    datetime->minute = bcd_to_dec(regs[1]);
+    datetime->hour = bcd_to_dec(regs[2]);
     datetime->dow = regs[3];
     datetime->day= bcd_to_dec(regs[4]);
     datetime->month = bcd_to_dec(regs[5] & 0x7f);

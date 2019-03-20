@@ -11,22 +11,24 @@ enum screen_state current_state;
 vdatetime_t new_datetime;
 valarm_t new_alarm;
 volatile uint8_t selected_alarm;
-volatile uint8_t force_redraw;
 
 static vdatetime_t * current_datetime;
 static vdatetime_t * last_datetime;
 static valarm_t * alarms;
+void (*force_redraw_now)(uint8_t full_update);
 
 
 void ui_init(
     vdatetime_t * _current_datetime,
     vdatetime_t * _last_datetime,
-    valarm_t * _alarms
+    valarm_t * _alarms,
+    void (*_force_redraw_now)(uint8_t full_update)
 ) {
     current_datetime = _current_datetime;
     last_datetime = _last_datetime;
     alarms = _alarms;
     current_state = DISPLAY;
+    force_redraw_now = _force_redraw_now;
 }
 
 
@@ -116,10 +118,13 @@ enum screen_state multi_input(
 
 
 void ui_input(char input) {
+    uint8_t force_redraw = 1;
+
     if (input == 's') {
         printf("Stopping alarm\n");
         stop_alarm(alarms);
     }
+
     switch(current_state) {
 
         case DISPLAY:
@@ -130,6 +135,7 @@ void ui_input(char input) {
                     break;
                 case '2':
                     datetime_copy(&new_datetime, current_datetime);
+                    new_datetime.second = 0;
                     current_state = SET_DATE_HOUR1;
                     break;
                 case 'r':
@@ -200,16 +206,16 @@ void ui_input(char input) {
             break;
 
         case SET_DATE_HOUR1:
-            current_state = basic_input(&new_datetime.hours, 1, input);
+            current_state = basic_input(&new_datetime.hour, 1, input);
             break;
         case SET_DATE_HOUR2:
-            current_state = basic_input(&new_datetime.hours, 0, input);
+            current_state = basic_input(&new_datetime.hour, 0, input);
             break;
         case SET_DATE_MINUTE_1:
-            current_state = basic_input(&new_datetime.minutes, 1, input);
+            current_state = basic_input(&new_datetime.minute, 1, input);
             break;
         case SET_DATE_MINUTE_2:
-            current_state = basic_input(&new_datetime.minutes, 0, input);
+            current_state = basic_input(&new_datetime.minute, 0, input);
             break;
         case SET_DATE_DOW:
             current_state = multi_input(&new_datetime.dow, 1, 7, input);
@@ -242,13 +248,6 @@ void ui_input(char input) {
     }
 
     printf("UI GOT: %d Now: %d\n", input, current_state);
-    if (!force_redraw) {
-        force_redraw = 1;
-    }
 
-    // epd_Init(lut_partial_update);
-    // epd_ClearFrameMemory(0xff);
-    // view_update(current_datetime, alarms);
-    // epd_DisplayFrame();
-    // epd_Sleep();
+    force_redraw_now(force_redraw - 1);
 }

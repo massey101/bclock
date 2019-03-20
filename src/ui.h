@@ -39,12 +39,12 @@ extern enum screen_state current_state;
 extern vdatetime_t new_datetime;
 extern valarm_t new_alarm;
 extern volatile uint8_t selected_alarm;
-extern volatile uint8_t force_redraw;
 
 void ui_init(
     vdatetime_t * _current_datetime,
     vdatetime_t * _last_datetime,
-    valarm_t * _alarms
+    valarm_t * _alarms,
+    void (*force_redraw_now)(uint8_t full_update)
 );
 void ui_input(char);
 

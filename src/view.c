@@ -18,8 +18,8 @@ void show_time(int x, int y, vdatetime_t * datetime) {
     sprintf(
         time_text,
         "%02u:%02u",
-        datetime->hours,
-        datetime->minutes
+        datetime->hour,
+        datetime->minute
     );
     paint_SetWidth(&paint, 40);
     paint_SetHeight(&paint, 130);
