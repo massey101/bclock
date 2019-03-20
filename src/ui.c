@@ -152,6 +152,7 @@ void ui_input(char input) {
                 case '4':
                     selected_alarm = input - '1';
                     copy_alarm(&new_alarm, &alarms[selected_alarm]);
+                    new_alarm.set = 1;
                     current_state = SET_ALARM_HOUR1;
                     break;
             }

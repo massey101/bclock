@@ -15,24 +15,16 @@ static struct paint paint;
 
 void show_time(int x, int y, vdatetime_t * datetime) {
     char time_text[16];
-    char date_text[16];
     sprintf(
         time_text,
         "%02u:%02u",
         datetime->hours,
         datetime->minutes
     );
-    sprintf(
-        date_text,
-        "%02u/%02u/%04u",
-        datetime->day,
-        datetime->month,
-        2000+datetime->year
-    );
     paint_SetWidth(&paint, 40);
     paint_SetHeight(&paint, 130);
     paint_Clear(&paint, UNCOLORED);
-    paint_DrawStringAt(&paint, 0, 0, time_text, &Courier_New24, 2, COLORED);
+    paint_DrawStringAt(&paint, 0, 2, time_text, &Courier_New24, 2, COLORED);
     epd_SetFrameMemory(
         paint_GetImage(&paint),
         epd_GetWidth() - paint_GetWidth(&paint) - y,
@@ -40,21 +32,45 @@ void show_time(int x, int y, vdatetime_t * datetime) {
         paint_GetWidth(&paint),
         paint_GetHeight(&paint)
     );
+}
+
+
+void show_dow(int x, int y, vdatetime_t * datetime) {
     paint_SetWidth(&paint, 24);
     paint_Clear(&paint, UNCOLORED);
-    paint_DrawStringAt(&paint, 0, 0, datetime_DOW[datetime->dow], &Courier_New24, 1, COLORED);
+    paint_DrawStringAt(
+        &paint,
+        0,
+        0,
+        datetime_DOW[datetime->dow],
+        &Courier_New24,
+        1,
+        COLORED
+    );
     epd_SetFrameMemory(
         paint_GetImage(&paint),
-        epd_GetWidth() - paint_GetWidth(&paint) - y - 43,
+        epd_GetWidth() - paint_GetWidth(&paint) - y,
         x,
         paint_GetWidth(&paint),
         paint_GetHeight(&paint)
+    );
+}
+
+
+void show_date(int x, int y, vdatetime_t * datetime) {
+    char date_text[16];
+    sprintf(
+        date_text,
+        "%02u/%02u/%04u",
+        datetime->day,
+        datetime->month,
+        2000+datetime->year
     );
     paint_Clear(&paint, UNCOLORED);
     paint_DrawStringAt(&paint, 0, 0, date_text, &Courier_New24, 1, COLORED);
     epd_SetFrameMemory(
         paint_GetImage(&paint),
-        epd_GetWidth() - paint_GetWidth(&paint) - y - 68,
+        epd_GetWidth() - paint_GetWidth(&paint) - y,
         x,
         paint_GetWidth(&paint),
         paint_GetHeight(&paint)
@@ -133,30 +149,58 @@ void show_alarm_pointer() {
     paint_DrawImageAt(&paint, x, y, img, 1, COLORED);
 }
 
-void show_alarm(int x, int y, valarm_t * alarm, uint8_t i) {
-    paint_SetWidth(&paint, 32);
-    paint_SetHeight(&paint, 100);
-    paint_Clear(&paint, UNCOLORED);
+//    0         1         2         3         4         5         6         6         7
+//    012345678901234567890123456789012345678901234567890123456789012345678901234567890
+//    ...................................................................................
+// 00 .                       ┌─────┐┌─────┐┌─────┐┌─────┐┌─────┐                       .
+// 01 .                       │     ││     ││     ││     ││     │                       .
+// 02 .       ╔      ██      ╗│     ││     ││     ││     ││     │                       .
+// 03 .             █  █      │ ██  ││ ██  ││     ││ ██  ││ ██  │                       .
+// 04 .             ████      │  █  ││  █  ││  █  ││  █  ││  █  │                       .
+// 05 .┌─────┐     █    █     │  █  ││  █  ││     ││  █  ││  █  │                       .
+// 06 .│     │    █      █    │  █  ││  █  ││     ││  █  ││  █  │                       .
+// 07 .│     │    █      █    │  █  ││  █  ││  █  ││  █  ││  █  │                       .
+// 08 .│ ██  │   █        █   ╟█████╢╟█████╢╟─────╢╟█████╢╟█████╢┌─────┐┌─────┐         .
+// 09 .│  █  │   █        █   ║     ║║     ║║     ║║     ║║     ║│     ││     │         .
+// 10 .│  █  │   █        █   ║     ║║     ║║     ║║     ║║     ║│     ││     │         .
+// 11 .│  █  │   █        █   ██─███╢██─███╢██─███╢██─███╢██─███╢██ ███│██ ███│         .
+// 12 .│  █  │  ██        ██  ██ ██ │██ ██ │██ ██ │██ ██ │██ ██ │██ ██ │██ ██ │         .
+// 13 .│█████│ ██          ██ ██ ██ │██ ██ │██ ██ │██ ██ │██ ██ │██ ██ │██ ██ │         .
+// 15 .│     │ █            █ █ █ █ │█ █ █ │█ █ █ │█ █ █ │█ █ █ │█ █ █ │█ █ █ │         .
+// 16 .│     │  ████████████  █   █ │█   █ │█   █ │█   █ │█   █ │█   █ │█   █ │         .
+// 17 .└─────┘      █  █      ██ ███│██ ███│██ ███│██ ███│██ ███│██ ███│██ ███│         .
+// 18 .       ╚      ██      ╝│     ││     ││     ││     ││     ││     ││     │         .
+// 18 .                       │     ││     ││     ││     ││     ││     ││     │         .
+// 19 .                       └─────┘└─────┘└─────┘└─────┘└─────┘└─────┘└─────┘         .
+// 20 .                                                                                 .
+// 21 .                                                                                 .
+// 22 .                                                                                 .
+// 23 .                                                                                 .
+//    ...................................................................................
+//
 
+void _show_alarm(int x, int y, valarm_t * alarm, uint8_t i) {
     if (current_state == SET_ALARMS) {
-        show_alarm_index(0, 13, i);
-        show_alarm_bell(8, 10, alarm);
+        show_alarm_index(x, y + 5, i);
+        show_alarm_bell(x + 8, y + 2, alarm);
     }
     if (alarm->set) {
         if (current_state != SET_ALARMS) {
-            show_alarm_bell(8, 10, alarm);
+            show_alarm_bell(x + 8, y + 2, alarm);
         }
-        show_alarm_time(26, 8, alarm);
-        show_alarm_dow(26, 16, alarm);
+        show_alarm_time(x + 26, y, alarm);
+        show_alarm_dow(x + 26, y + 8, alarm);
     }
+}
 
-    if (
-        current_state >= SET_ALARM_HOUR1 &&
-        current_state <= SET_ALARM_DOW_SUNDAY &&
-        selected_alarm == i
-    ) {
-        show_alarm_pointer(26, 0, 26, 8);
-    }
+
+void show_alarm(int x, int y, valarm_t * alarm, uint8_t i) {
+    paint_SetWidth(&paint, 24);
+    paint_SetHeight(&paint, 80);
+    paint_Clear(&paint, UNCOLORED);
+
+    _show_alarm(0, 0, alarm, i);
+
     epd_SetFrameMemory(
         paint_GetImage(&paint),
         epd_GetWidth() - paint_GetWidth(&paint) - y,
@@ -167,18 +211,67 @@ void show_alarm(int x, int y, valarm_t * alarm, uint8_t i) {
 }
 
 
-void show_alarms(int x, int y, valarm_t * alarms) {
-    for (int i = 0; i < NUM_ALARMS; i++) {
-        valarm_t * alarm = &alarms[i];
-        if (
-            current_state >= SET_ALARM_HOUR1 &&
-            current_state <= SET_ALARM_DOW_SUNDAY &&
-            selected_alarm == i
-        ) {
-            alarm = &new_alarm;
-        }
-        show_alarm(x, y + i*32, alarm, i);
-    }
+//    0         1         2         3         4         5         6         7         8
+//    012345678901234567890123456789012345678901234567890123456789012345678901234567890
+//    ...................................................................................
+// 00 .                        ███████                                                  .
+// 01 .                        ███████                                                  .
+// 02 .                         █████                                                   .
+// 03 .                         █████                                                   .
+// 04 .                          ███                                                    .
+// 05 .                          ███                                                    .
+// 06 .                           █                                                     .
+// 07 .                           █                                                     .
+// 08 .                         ┌─────┐┌─────┐┌─────┐┌─────┐┌─────┐                     .
+// 09 .                         │     ││     ││     ││     ││     │                     .
+// 10 .       ╔      ██      ╗  │     ││     ││     ││     ││     │                     .
+// 11 .             █  █        │ ██  ││ ██  ││     ││ ██  ││ ██  │                     .
+// 12 .             ████        │  █  ││  █  ││  █  ││  █  ││  █  │                     .
+// 13 .┌─────┐     █    █       │  █  ││  █  ││     ││  █  ││  █  │                     .
+// 14 .│     │    █      █      │  █  ││  █  ││     ││  █  ││  █  │                     .
+// 15 .│     │    █      █      │  █  ││  █  ││  █  ││  █  ││  █  │                     .
+// 16 .│ ██  │   █        █     ╟█████╢╟█████╢╟─────╢╟█████╢╟█████╢┌─────┐┌─────┐       .
+// 17 .│  █  │   █        █     ║     ║║     ║║     ║║     ║║     ║│     ││     │       .
+// 18 .│  █  │   █        █     ║     ║║     ║║     ║║     ║║     ║│     ││     │       .
+// 19 .│  █  │   █        █     ██─███╢██─███╢██─███╢██─███╢██─███╢██ ███│██ ███│       .
+// 20 .│  █  │  ██        ██    ██ ██ │██ ██ │██ ██ │██ ██ │██ ██ │██ ██ │██ ██ │       .
+// 21 .│█████│ ██          ██   ██ ██ │██ ██ │██ ██ │██ ██ │██ ██ │██ ██ │██ ██ │       .
+// 22 .│     │ █            █   █ █ █ │█ █ █ │█ █ █ │█ █ █ │█ █ █ │█ █ █ │█ █ █ │       .
+// 23 .│     │  ████████████    █   █ │█   █ │█   █ │█   █ │█   █ │█   █ │█   █ │       .
+// 24 .└─────┘      █  █        ██ ███│██ ███│██ ███│██ ███│██ ███│██ ███│██ ███│       .
+// 25 .       ╚      ██      ╝  │     ││     ││     ││     ││     ││     ││     │       .
+// 26 .                         │     ││     ││     ││     ││     ││     ││     │       .
+// 27 .                         └─────┘└─────┘└─────┘└─────┘└─────┘└─────┘└─────┘       .
+// 28 .                           █                                                     .
+// 29 .                           █                                                     .
+// 30 .                          ███                                                    .
+// 31 .                          ███                                                    .
+// 32 .                         █████                                                   .
+// 33 .                         █████                                                   .
+// 34 .                        ███████                                                  .
+// 35 .                        ███████                                                  .
+// 36 .                                                                                 .
+// 37 .                                                                                 .
+// 38 .                                                                                 .
+// 39 .                                                                                 .
+// 40 .                                                                                 .
+//    ...................................................................................
+
+void show_alarm_edit(int x, int y, valarm_t * alarm) {
+    paint_SetWidth(&paint, 40);
+    paint_SetHeight(&paint, 80);
+    paint_Clear(&paint, UNCOLORED);
+
+    _show_alarm(0, 8, alarm, 0);
+    show_alarm_pointer();
+
+    epd_SetFrameMemory(
+        paint_GetImage(&paint),
+        epd_GetWidth() - paint_GetWidth(&paint) - y - (-8),
+        x,
+        paint_GetWidth(&paint),
+        paint_GetHeight(&paint)
+    );
 }
 
 
@@ -187,8 +280,44 @@ void view_init() {
     paint_SetRotate(&paint, ROTATE_90);
 }
 
+// Display outline
+//
+//       00112233445566778899aabbccddeef
+//       0808080808080808080808080808080
+//      .................................
+// 0x00 .                               .
+// 0x08 . ┌───────────────┐ ┌──────────┐.
+// 0x10 . │               │ │ alarm1   │.
+// 0x18 . │ time          │ └──────────┘.
+// 0x20 . │               │ ┌──────────┐.
+// 0x28 . └───────────────┘ │ alarm2   │.
+// 0x30 . ┌───────────────┐ └──────────┘.
+// 0x38 . │  dow          │ ┌──────────┐.
+// 0x40 . └───────────────┘ │ alarm3   │.
+// 0x48 . ┌───────────────┐ └──────────┘.
+// 0x50 . │  date         │ ┌──────────┐.
+// 0x58 . └───────────────┘ │ alarm4   │.
+// 0x60 .                   └──────────┘.
+// 0x68 .                               .
+// 0x70 .                               .
+// 0x78 .                               .
+//      .................................
+//
+//
 
 void view_update(vdatetime_t * datetime, valarm_t * alarms) {
-    show_time(8, 2, datetime);
-    show_alarms(145, 8, alarms);
+    show_time(0x08, 0x00, datetime);
+    show_dow(0x08, 0x28, datetime);
+    show_date(0x08, 0x40, datetime);
+    if (
+        current_state >= SET_ALARM_HOUR1 &&
+        current_state <= SET_ALARM_DOW_SUNDAY
+    ) {
+        show_alarm_edit(0x98, 0x10 + selected_alarm * 0x18, &new_alarm);
+    } else {
+        for (uint8_t i = 0; i < NUM_ALARMS; i++) {
+            valarm_t * alarm = &alarms[i];
+            show_alarm(0x98, 0x10 + i*0x18, alarm, i);
+        }
+    }
 }
