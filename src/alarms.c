@@ -114,7 +114,7 @@ void start_alarm(valarm_t * alarms) {
     alarm_ctx_t ctx = {
         .counter = 0,
         .delay = 5000,
-        .audio_to_play = &snd_wakeup_call,
+        .audio_to_play = &snd_buzzer,
         .alarms = alarms
     };
     pctx_t pctx = (pctx_t) &ctx;
