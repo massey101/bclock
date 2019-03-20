@@ -32,7 +32,6 @@ void async_delay_ms(
     cb_t _func,
     pctx_t _func_ctx
 ) {
-
     ms = _ms;
     func_ctx = _func_ctx;
     func = _func;
