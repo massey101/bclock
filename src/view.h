@@ -17,6 +17,6 @@ void view_init();
  * datetime - The current time to show
  * alarms - An array of alarms to show
  */
-void view_update(datetime_t * datetime, valarm_t * alarms);
+void view_update(vdatetime_t * datetime, valarm_t * alarms);
 
 #endif // VIEW_H
