@@ -29,6 +29,7 @@ OBJS = \
 	$(OBJ)/main.o \
 	$(OBJ)/uart.o \
 	$(OBJ)/ds3231.o \
+	$(OBJ)/datetime.o \
 	$(OBJ)/twi.o \
 	$(OBJ)/epd2in13.o \
 	$(OBJ)/epdif.o \
@@ -37,14 +38,16 @@ OBJS = \
 	$(OBJ)/pcm_audio.o \
 	$(OBJ)/async_delay.o \
 	$(OBJ)/view.o \
-	$(OBJ)/snd_wakeup_call.o \
+	$(OBJ)/ui.o \
 	$(OBJ)/snd_buzzer.o \
 	$(OBJ)/Courier_New12.o \
 	$(OBJ)/Courier_New24.o
+	#$(OBJ)/snd_wakeup_call.o
 LIB =
 DEPS = \
 	$(SRC)/uart.h \
 	$(SRC)/ds3231.h \
+	$(SRC)/datetime.h \
 	$(SRC)/twi.h \
 	$(SRC)/epd2in13.h \
 	$(SRC)/epdif.h \
@@ -55,6 +58,7 @@ DEPS = \
 	$(SRC)/async_delay.h \
 	$(SRC)/callbacks.h \
 	$(SRC)/view.h \
+	$(SRC)/ui.h \
 	$(SRC)/img_bell.h \
 	$(SRC)/img_bell_ringing.h \
 	$(SRC)/fonts.h

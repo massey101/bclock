@@ -22,6 +22,7 @@ uint32_t EEMEM e_check_sum;
 alarm_t EEMEM e_alarms[NUM_ALARMS];
 
 
+
 // Checksum for EEPROM global variables
 #define ALARM_CHECKSUM 0x2261cde8
 
@@ -53,7 +54,19 @@ void init_alarms(valarm_t * alarms) {
 }
 
 
-uint8_t check_alarm(valarm_t * alarm, datetime_t * date) {
+void save_alarm(valarm_t * alarm, uint8_t index) {
+    eeprom_write_block((void *) alarm, &e_alarms[index], sizeof(alarm_t));
+}
+
+
+void save_alarms(valarm_t * alarms) {
+    for (int i = 0; i < NUM_ALARMS; i++) {
+        save_alarm(&alarms[i], i);
+    }
+}
+
+
+uint8_t check_alarm(valarm_t * alarm, vdatetime_t * date) {
     if (!alarm->set) {
        return 0;
     }
@@ -117,7 +130,13 @@ void start_alarm(valarm_t * alarms) {
 }
 
 
-uint8_t check_alarms(valarm_t * alarms, datetime_t * date) {
+void stop_alarm(valarm_t * alarms) {
+    clear_alarms(alarms);
+    pcm_audio_stop();
+}
+
+
+uint8_t check_alarms(valarm_t * alarms, vdatetime_t * date) {
     for (int i = 0; i < NUM_ALARMS; i++) {
         if (check_alarm(&alarms[i], date)) {
             return -1;
@@ -138,8 +157,18 @@ uint8_t activated_alarms(valarm_t * alarms) {
     return 0;
 }
 
+
 void clear_alarms(valarm_t * alarms) {
     for (int i = 0; i < NUM_ALARMS; i++) {
         alarms[i].active = 0;
     }
+}
+
+
+void copy_alarm(valarm_t * dest, valarm_t * src) {
+    dest->set = src->set;
+    dest->hour = src->hour;
+    dest->minute = src->minute;
+    dest->dow = src->dow;
+    dest->active = src->active;
 }

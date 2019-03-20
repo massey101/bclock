@@ -6,17 +6,6 @@
 #define DS3231_WR 0x00
 #define DS3231_RD 0x01
 
-const char * datetime_DOW[] = {
-    "",
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-    "Sunday"
-};
-
 
 uint8_t bcd_to_dec(uint8_t bcd_val) {
     return (((bcd_val >> 4) * 10) + (bcd_val & 0x0f));
@@ -40,7 +29,7 @@ void ds3231_init(void) {
 }
 
 
-void ds3231_set(datetime_t * datetime) {
+void ds3231_set(vdatetime_t * datetime) {
     uint8_t regs[7];
     regs[0] = dec_to_bcd(datetime->seconds);
     regs[1] = dec_to_bcd(datetime->minutes);
@@ -49,14 +38,9 @@ void ds3231_set(datetime_t * datetime) {
     regs[4] = dec_to_bcd(datetime->day);
     regs[5] = dec_to_bcd(datetime->month);
 
-    // There is a single bit in the month register for the centuary. We use
-    // this to differentiate between the 1900s and 2000s.
-    if (datetime->year >= 2000) {
-        regs[5] |= 0x80;
-        regs[6] = dec_to_bcd((datetime->year - 2000) & 0xff);
-    } else {
-        regs[6] = dec_to_bcd((datetime->year - 1900) & 0xff);
-    }
+    // Always default to 21st centuary
+    regs[5] |= 0x80;
+    regs[6] = dec_to_bcd(datetime->year);
 
     // Start twi in write mode and update from register address 0x00.
     twi_start();
@@ -70,7 +54,7 @@ void ds3231_set(datetime_t * datetime) {
 }
 
 
-void ds3231_get(datetime_t * datetime) {
+void ds3231_get(vdatetime_t * datetime) {
     uint8_t regs[7];
 
     // Start twi in write mode at register address 0x00 so we can read starting
@@ -94,11 +78,6 @@ void ds3231_get(datetime_t * datetime) {
     datetime->dow = regs[3];
     datetime->day= bcd_to_dec(regs[4]);
     datetime->month = bcd_to_dec(regs[5] & 0x7f);
-    if (regs[5] & 0xf0) {
-        datetime->year = 2000;
-    } else {
-        datetime->year = 1900;
-    }
-    datetime->year += bcd_to_dec(regs[6]);
+    datetime->year = bcd_to_dec(regs[6]);
 }
 

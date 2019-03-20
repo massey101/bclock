@@ -15,6 +15,7 @@
 #include "pcm_audio.h"
 #include "async_delay.h"
 #include "sounds.h"
+#include "ui.h"
 
 
 uint8_t BCDtoDEC(uint8_t bcd_val) {
@@ -122,17 +123,30 @@ void set_date() {
     ds3231_set(&date);
 }
 
+vuart_ctx_t uart_ctx;
+
+
+void button_pressed(pctx_t pctx) {
+    uart_ctx_t * uart_ctx = (uart_ctx_t *)pctx;
+
+    printf("Got: %d\n", uart_ctx->data);
+
+    ui_input(uart_ctx->data);
+}
+
 
 int main(void)
 {
-    datetime_t last_date = {0};
-    datetime_t date;
+    vdatetime_t last_date = {0};
+    vdatetime_t date;
     valarm_t alarms[NUM_ALARMS];
     uint8_t alarm_already_active;
     const unsigned char * lut;
 
     /* init */
-    uart_init(38400);
+    uart_ctx.data = 0;
+    uart_ctx.ctx= 0;
+    uart_init_interrupt(38400, &button_pressed, &uart_ctx);
     stdout = &uart_stdout;
     stdin = &uart_input;
     printf("init\n");
@@ -143,6 +157,7 @@ int main(void)
     epd_Sleep();
 
     view_init();
+    ui_init(&date, &last_date, alarms);
 
     init_alarms(alarms);
     alarms[0].set = 1;
@@ -156,8 +171,8 @@ int main(void)
     alarms[1].dow = 0xc0;
 
     alarms[2].set = 1;
-    alarms[2].hour = 11;
-    alarms[2].minute = 31;
+    alarms[2].hour = 12;
+    alarms[2].minute = 01;
     alarms[2].dow = 0xff;
     // alarms[2].active = 1;
 
@@ -168,18 +183,21 @@ int main(void)
     while (1) {
         ds3231_get(&date);
         if (
-            date.year != last_date.year || \
-            date.month != last_date.month || \
-            date.day != last_date.day || \
-            date.hours != last_date.hours || \
-            date.minutes != last_date.minutes
+            date.year != last_date.year ||
+            date.month != last_date.month ||
+            date.day != last_date.day ||
+            date.hours != last_date.hours ||
+            date.minutes != last_date.minutes ||
+            force_redraw
         ) {
             if (
-                date.year != last_date.year || \
-                date.month != last_date.month || \
-                date.day != last_date.day || \
-                date.hours != last_date.hours
+                date.year != last_date.year ||
+                date.month != last_date.month ||
+                date.day != last_date.day ||
+                date.hours != last_date.hours ||
+                force_redraw == 2
             ) {
+                printf("Full update\n");
                 lut = lut_full_update;
             }
             alarm_already_active = activated_alarms(alarms);
@@ -191,10 +209,15 @@ int main(void)
             epd_Sleep();
             lut = lut_partial_update;
             if (activated_alarms(alarms) && !alarm_already_active) {
-                printf("Activating alarm!");
+                printf(
+                    "Activating alarm %d %d!\n",
+                    activated_alarms(alarms),
+                    alarm_already_active
+                );
                 start_alarm(alarms);
             }
-            memcpy(&last_date, &date, sizeof(date));
+            datetime_copy(&last_date, &date);
+            force_redraw = 0;
         }
 
         printf(

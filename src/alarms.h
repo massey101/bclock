@@ -36,13 +36,27 @@ void init_alarm(valarm_t * alarm);
 void init_alarms(valarm_t * alarms);
 
 /**
+ * Save an alarm to eeprom.
+ *
+ * alarm - The alarm to save
+ */
+void save_alarm(valarm_t * alarm, uint8_t index);
+
+/**
+ * Save all alarms to eeprom.
+ *
+ * alarms - An array of NUM_ALARMS alarms to save
+ */
+void save_alarms(valarm_t * alarms);
+
+/**
  * Check whether the alarm matches the date. If so the alarm will be activated.
  *
  * alarm - The alarm to check
  * date - Compare with this date
  * returns - True if the alarm matches the date
  */
-uint8_t check_alarm(valarm_t * alarm, datetime_t * date);
+uint8_t check_alarm(valarm_t * alarm, vdatetime_t * date);
 
 /**
  * Check whether any alarms match the date. If any do they will be activated.
@@ -51,7 +65,7 @@ uint8_t check_alarm(valarm_t * alarm, datetime_t * date);
  * date - Compare with this date
  * returns - True if any alarms match the date
  */
-uint8_t check_alarms(valarm_t * alarms, datetime_t * date);
+uint8_t check_alarms(valarm_t * alarms, vdatetime_t * date);
 
 /**
  * Check whether any alarms have previously been activated by `check_alarm`.
@@ -75,5 +89,20 @@ void clear_alarms(valarm_t * alarms);
  * alarms - An array of NUM_ALARMS alarms to watch for deactivation
  */
 void start_alarm(valarm_t * alarms);
+
+/**
+ * Stop the pcm_audio module and clear the alarms.
+ *
+ * alarms - An array of NUM_ALARMS alarms to clear
+ */
+void stop_alarm(valarm_t * alarms);
+
+/**
+ * Copy an alarm.
+ *
+ * dest - Destination.
+ * src - Source.
+ */
+void copy_alarm(valarm_t * dest, valarm_t * src);
 
 #endif // ALARMS_H
