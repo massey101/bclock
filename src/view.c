@@ -111,14 +111,21 @@ void show_alarm_time(int x, int y, valarm_t * alarm) {
 
 
 void show_alarm_dow(int x, int y, valarm_t * alarm) {
-    const char DOW[] = "MTWTFSS";
-    char alarm_DOW[] = "       ";
+    const char dow[] = "MTWTFSS";
+
+    paint_DrawStringAt(&paint, x, y, dow, &Courier_New12, 1, COLORED);
     for (int i = 0; i < 7; i++) {
         if (alarm->dow & (0x01 << (i + 1))) {
-            alarm_DOW[i] = DOW[i];
+            paint_DrawFilledRectangle(
+                &paint,
+                x + i * Courier_New12.Width,
+                y + Courier_New12.Height - 2,
+                x + i * Courier_New12.Width + Courier_New12.Width - 2,
+                y + Courier_New12.Height - 1,
+                COLORED
+            );
         }
     }
-    paint_DrawStringAt(&paint, x, y, alarm_DOW, &Courier_New12, 1, COLORED);
 }
 
 
@@ -170,8 +177,8 @@ void show_alarm_pointer() {
 // 16 .│     │  ████████████  █   █ │█   █ │█   █ │█   █ │█   █ │█   █ │█   █ │         .
 // 17 .└─────┘      █  █      ██ ███│██ ███│██ ███│██ ███│██ ███│██ ███│██ ███│         .
 // 18 .       ╚      ██      ╝│     ││     ││     ││     ││     ││     ││     │         .
-// 18 .                       │     ││     ││     ││     ││     ││     ││     │         .
-// 19 .                       └─────┘└─────┘└─────┘└─────┘└─────┘└─────┘└─────┘         .
+// 18 .                       ######│######│######│######│######│######│######│
+// 19 .                       ######┘######┘######┘######┘######┘######┘######┘
 // 20 .                                                                                 .
 // 21 .                                                                                 .
 // 22 .                                                                                 .
