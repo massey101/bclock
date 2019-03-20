@@ -288,7 +288,7 @@ void epd_SetMemoryPointer(int x, int y) {
  */
 void epd_Sleep() {
     epd_SendCommand(DEEP_SLEEP_MODE);
-    epd_WaitUntilIdle();
+    epd_SendData(0x01);
 }
 
 
