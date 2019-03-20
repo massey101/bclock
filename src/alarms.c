@@ -12,6 +12,7 @@ typedef async_ctx struct {
     valarm_t * alarms;
 } alarm_ctx_t;
 
+alarm_ctx_t ctx;
 void wait_alarm_cb(pctx_t pctx);
 void play_tone_alarm_cb(pctx_t pctx);
 
@@ -79,19 +80,18 @@ uint8_t check_alarm(valarm_t * alarm, datetime_t * date) {
  * when it has completed.
  */
 void play_tone_alarm_cb(pctx_t pctx) {
-    alarm_ctx_t * ctx = pctx;
-
-    if (!activated_alarms(ctx->alarms)) {
+    if (!activated_alarms(ctx.alarms)) {
         return;
     }
 
-    if (ctx->counter >= 20) {
-        clear_alarms(ctx->alarms);
+    if (ctx.counter >= 20) {
+        clear_alarms(ctx.alarms);
+        pcm_audio_stop();
         return;
     }
 
-    ctx->counter++;
-    pcm_audio_play(ctx->audio_to_play, &wait_alarm_cb, pctx);
+    ctx.counter++;
+    pcm_audio_play(ctx.audio_to_play, &wait_alarm_cb, pctx);
 }
 
 
@@ -99,26 +99,21 @@ void play_tone_alarm_cb(pctx_t pctx) {
  * This callback will start an async delay to play the next tone.
  */
 void wait_alarm_cb(pctx_t pctx) {
-    alarm_ctx_t * ctx = pctx;
-
     pcm_audio_stop();
-    if (!activated_alarms(ctx->alarms)) {
+    if (!activated_alarms(ctx.alarms)) {
         return;
     }
 
-    async_delay_ms(ctx->delay, &play_tone_alarm_cb, pctx);
+    async_delay_ms(ctx.delay, &play_tone_alarm_cb, pctx);
 }
 
 
 void start_alarm(valarm_t * alarms) {
-    alarm_ctx_t ctx = {
-        .counter = 0,
-        .delay = 5000,
-        .audio_to_play = &snd_buzzer,
-        .alarms = alarms
-    };
-    pctx_t pctx = (pctx_t) &ctx;
-    play_tone_alarm_cb(pctx);
+    ctx.counter = 0;
+    ctx.delay = 5000;
+    ctx.audio_to_play = &snd_buzzer;
+    ctx.alarms = alarms;
+    play_tone_alarm_cb(0);
 }
 
 
