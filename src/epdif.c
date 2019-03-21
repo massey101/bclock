@@ -32,7 +32,7 @@
 
 // CS = PB2
 // RESET = PD7
-// DC = PD6
+// DC = PD3
 // BUSY = PD5
 
 static epdif_busy_cb_t busy_cb = 0;
@@ -48,9 +48,9 @@ void epd_if_DigitalWrite(int pin, int value) {
     }
     if (pin == DC_PIN) {
         if (value == LOW) {
-            PORTD &= ~(1<<PD6);
+            PORTD &= ~(1<<PD3);
         } else {
-            PORTD |= (1<<PD6);
+            PORTD |= (1<<PD3);
         }
     }
     if (pin == CS_PIN) {
@@ -75,7 +75,7 @@ int epd_if_DigitalRead(int pin) {
         return (PIND & (1<<PD7)) >> PD7;
     }
     if (pin == DC_PIN) {
-        return (PIND & (1<<PD6)) >> PD6;
+        return (PIND & (1<<PD3)) >> PD3;
     }
     if (pin == CS_PIN) {
         return (PINB & (1<<PB2)) >> PB2;
@@ -97,7 +97,7 @@ void epd_if_SpiTransfer(unsigned char data) {
 
 int epd_if_Init() {
     DDRB |= (1<<PB3) | (1<<PB5) | (1<<PB2);
-    DDRD |= (1<<PD7) | (1<<PD6);
+    DDRD |= (1<<PD7) | (1<<PD3);
     DDRD &= ~(1<<PD5);
     SPCR |= (1<<SPE) | (1<<MSTR) | (1<<SPR0);
     PORTB |= (1<<PB2);

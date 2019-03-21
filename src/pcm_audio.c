@@ -37,9 +37,9 @@ void stop_playback() {
     TCCR1B &= ~_BV(CS10);
 
     // Disable the PWM timer.
-    // TCCR2B &= ~_BV(CS10);
+    // TCCR0B &= ~_BV(CS00);
 
-    PORTD &= ~_BV(PD3);
+    PORTD &= ~_BV(PD6);
 }
 
 
@@ -53,7 +53,7 @@ ISR(TIMER1_COMPA_vect) {
         } else if (current_sample < first_sample) {
             current_sample++;
         }
-        OCR2B = current_sample;
+        OCR0A = current_sample;
 
         if (current_sample == first_sample) {
             current_mode = PLAYING;
@@ -64,7 +64,7 @@ ISR(TIMER1_COMPA_vect) {
         // Move through the file and play each sample. Once we reach the end
         // start pausing and notify the caller that we have finished.
         current_sample = pcm_audio_get_sample(sample_i);
-        OCR2B = current_sample;
+        OCR0A = current_sample;
         sample_i++;
 
         if (sample_i >= current_audio->length) {
@@ -85,7 +85,7 @@ ISR(TIMER1_COMPA_vect) {
             current_sample++;
         }
 
-        OCR2B = current_sample;
+        OCR0A = current_sample;
 
         if (current_sample == PCM_MIDDLE) {
             current_mode = FINISHED;
@@ -105,7 +105,7 @@ ISR(TIMER1_COMPA_vect) {
             current_sample++;
         }
 
-        OCR2B = current_sample;
+        OCR0A = current_sample;
 
         if (current_sample == PCM_LOW) {
             current_mode = STOPPED;
@@ -119,30 +119,26 @@ ISR(TIMER1_COMPA_vect) {
 
 
 void pcm_audio_init() {
-    // Setup PORTD PIN 3 as an ouput (OC2B)
-    DDRD |= _BV(PD3);
+    // Setup PORTD PIN 6 as an ouput (OC0A)
+    DDRD |= _BV(PD6);
 
-    // Set up Timer 2 to do pulse width modulation on the speaker
+    // Set up Timer 0 to do pulse width modulation on the speaker
     // pin.
 
-    // Use internal clock (datasheet p.160)
-    ASSR &= ~(_BV(EXCLK) | _BV(AS2));
-
     // Set fast PWM mode  (p.157)
-    TCCR2A |= _BV(WGM21) | _BV(WGM20);
-    TCCR2B &= ~_BV(WGM22);
+    TCCR0A |= _BV(WGM01) | _BV(WGM00);
+    TCCR0B &= ~_BV(WGM02);
 
-    // Do non-inverting PWM on pin OC2B (p.155)
-    // On the Arduino this is pin 3.
-    TCCR2A |= _BV(COM2B1);
-    TCCR2A &= ~_BV(COM2B0);
-    // No prescaler (p.158)
-    TCCR2B &= ~(_BV(CS12) | _BV(CS11));
-    // This will enable the PWM timer
-    TCCR2B |= _BV(CS10);
+    // Do non-inverting PWM on pin OC0A (p.155)
+    TCCR0A |= _BV(COM0B1);
+    TCCR0A &= ~_BV(COM0B0);
+
+    // No prescaler (p.158) (enables timer)
+    TCCR0B &= ~_BV(CS02) & ~_BV(CS01);
+    TCCR0B |= _BV(CS00);
 
     // Set initial pulse width to the first sample.
-    OCR2B = PCM_LOW;
+    OCR0A = PCM_LOW;
 };
 
 
@@ -173,7 +169,7 @@ void pcm_audio_play(
     TIMSK1 |= _BV(OCIE1A);
 
     // Enable the PWM timer.
-    TCCR2B |= _BV(CS10);
+    TCCR0A |= _BV(CS00);
 
     sample_i = 0;
     current_audio = pcm_audio;

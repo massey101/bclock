@@ -2,6 +2,8 @@
 #include <avr/sleep.h>
 #include "async_delay.h"
 
+#define OSC_FREQ 32768
+
 
 static async_delay_cb_t func;
 static volatile ms_t ms;
@@ -31,10 +33,10 @@ void async_delay_trigger() {
 
 void async_delay_stop() {
     // Disable the interrupt
-    TIMSK0 &= ~_BV(OCIE0A);
+    TIMSK2 &= ~_BV(OCIE2A);
 
     // Disable the per-sample timer completely.
-    TCCR0B &= ~(_BV(CS00) | _BV(CS01));
+    TCCR2B &= ~_BV(CS22) & ~_BV(CS21) & ~_BV(CS20);
     func = 0;
 }
 
@@ -47,21 +49,25 @@ void async_delay_ms(
     real_ms = _ms;
     func = _func;
 
-    // Set CTC mode (Clear timer on Compare Match)
-    // Have to set OCR1A after, otherwise it gets reset to 0.
-    TCCR0A &= ~(_BV(WGM00) | _BV(WGM02));
-    TCCR0A |= _BV(WGM01);
+    // User external 32.768kHz oscillator
+    ASSR &= ~_BV(EXCLK);
+    ASSR &= _BV(AS2);
 
-    // Prescaler of F_IO/64
-    TCCR0B &= ~_BV(CS02);
-    TCCR0B |= _BV(CS00) | _BV(CS01);
+    // Set CTC mode (Clear timer on Compare Match)
+    // Have to set OCR2A after, otherwise it gets reset to 0.
+    TCCR2A &= ~_BV(WGM22) & ~_BV(WGM20);
+    TCCR2A |= _BV(WGM21);
+
+    // Prescaler of 1
+    TCCR2B &= ~_BV(CS22) & ~_BV(CS21);
+    TCCR2B |= _BV(CS20);
 
     // Set the compare register
     // The target is 1000Hz
-    OCR0A = (F_CPU / 64) / 1000 - 1;
+    OCR2A = 1 * OSC_FREQ / 1000 - 1;
 
-    // Enable interrupt when TCNT1 == OCR1A
-    TIMSK0 |= _BV(OCIE0A);
+    // Enable interrupt when TCNT2 == OCR2A
+    TIMSK2 |= _BV(OCIE2A);
 
     // set_sleep_mode(SLEEP_MODE_PWR_SAVE);
     // sleep_mode();
