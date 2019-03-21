@@ -23,27 +23,23 @@ vdatetime_t date;
 valarm_t alarms[NUM_ALARMS];
 const unsigned char * volatile lut;
 volatile uint8_t force_redraw = 0;
-volatile uint32_t ms_since_last_draw = 0;
-volatile uint32_t ms_since_last_minute = 0;
-volatile uint32_t ms_since_last_time_fetch = 0xffff;
+volatile uint32_t ms_since_last_draw = 0xffffffff;
+volatile uint32_t ms_since_last_minute = 0xffffffff;
+volatile uint32_t ms_since_last_time_fetch = 0xffffffff;
 
 
 void button_pressed(char input) {
-    printf("Got: %d\n", input);
-
     ui_input(input);
 }
 
 
 void force_redraw_now(uint8_t full_update) {
-    printf("Force Redraw\n"); fflush(stdout);
     force_redraw = 1;
     if (full_update) {
         force_redraw = 2;
     }
 
     async_delay_trigger();
-    printf("Force Redraw\n"); fflush(stdout);
 }
 
 
@@ -101,6 +97,10 @@ uint32_t update_display() {
     if (epd_IsBusy()) {
         return 100;
     }
+
+    force_redraw = 0;
+    ms_since_last_draw = 0;
+
     if (epd_IsAsleep()) {
         epd_Init(lut);
     }
@@ -110,8 +110,6 @@ uint32_t update_display() {
 
     // Reset display updating variables;
     lut = lut_partial_update;
-    force_redraw = 0;
-    ms_since_last_draw = 0;
 
     return 0;
 }
@@ -141,40 +139,40 @@ void draw_loop(uint32_t real_ms) {
     ms_since_last_minute += real_ms;
     ms_since_last_time_fetch += real_ms;
 
+    // Until we get to around 50 seconds don't bother checking the time and
+    // don't bother sleeping for a short time.
+    // Once we get past 50 seconds start checking the time every minute.
+    //
+    // If we predict that the seconds counter is approximately higher than 50s
+    // then start checking the time every second.
     uint32_t sleep_for_ms = 1000;
+    if (ms_since_last_minute > 50000) {
+        if (ms_since_last_time_fetch >= 1000) {
+            ds3231_get(&date);
+            ms_since_last_time_fetch = 0;
+            ms_since_last_minute = 1000 * date.second;
+            print_date(&date);
+        }
+    }
+
+    // If we predict that the seconds counter is approximately lower than 50s
+    // then don't bother checking the time, just wait until we get there.
     if (ms_since_last_minute < 50000) {
         sleep_for_ms = 50000 - ms_since_last_minute;
-    }
-
-    // If it has been a significant time since our last time fetch then
-    // get the time.
-    if (ms_since_last_time_fetch > 2000) {
-        ds3231_get(&date);
-        ms_since_last_time_fetch = 0;
-        print_date(&date);
-    }
-
-
-    if (! datetime_cmp(&date, &last_date, MINUTES)) {
-        ms_since_last_minute = 1000 * date.second;
-        sleep_for_ms = 50000;
     }
 
     // Update the display. This is only triggered if there is a change in
     // time or if it is forced to by the ui.
     if (! datetime_cmp(&date, &last_date, MINUTES) || force_redraw) {
-        printf("Updating display\n");
 
         // Perform a full update of the screen every hour or when forced to by
         // the ui.
         if (! datetime_cmp(&date, &last_date, HOURS) || force_redraw == 2) {
-            printf("Full update\n");
             lut = lut_full_update;
         }
 
         int display_updater_wants_ms = update_display();
         if (display_updater_wants_ms) {
-            printf("Got: %d from dis_update s%d b%d\n", display_updater_wants_ms, epd_IsAsleep(), epd_IsBusy());
             sleep_for_ms = display_updater_wants_ms;
         }
     }
@@ -190,13 +188,19 @@ void draw_loop(uint32_t real_ms) {
     datetime_copy(&last_date, &date);
 
     // Check whether the display watcher wants to put the display in sleep mode
+    // (IMPORTANT)
     int display_watcher_wants_ms = watch_display();
     if (display_watcher_wants_ms) {
-        printf("Got: %d from dis_watch s%d b%d\n", display_watcher_wants_ms, epd_IsAsleep(), epd_IsBusy());
         sleep_for_ms = display_watcher_wants_ms;
     }
 
-    printf("Sleeping for %lums\n", sleep_for_ms);
+    // Double check whether we have had a second force redraw issued since the
+    // display update. If so we want to make sure we update the display again
+    // soonish.
+    if (force_redraw && sleep_for_ms > 500) {
+        sleep_for_ms = 500;
+    }
+
     async_delay_ms(sleep_for_ms, &draw_loop);
 }
 

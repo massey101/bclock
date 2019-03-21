@@ -118,7 +118,10 @@ enum screen_state multi_input(
 
 
 void ui_input(char input) {
-    uint8_t ui_force_redraw = 1;
+    uint8_t last_state = current_state;
+    uint8_t ui_force_redraw = 0;
+
+    printf("In: %c", input);
 
     if (input == 's') {
         printf("Stopping alarm\n");
@@ -141,7 +144,7 @@ void ui_input(char input) {
                 case 'r':
                     printf("Setting force_redraw\n");
                     current_state = current_state;
-                    ui_force_redraw = 2;
+                    ui_force_redraw = 1;
                     break;
             }
             break;
@@ -247,7 +250,14 @@ void ui_input(char input) {
             break;
     }
 
-    printf("UI GOT: %d Now: %d frn: %p fr: %d\n", input, current_state, force_redraw_func, ui_force_redraw);
+    if (ui_force_redraw) {
+        force_redraw_func(ui_force_redraw);
+        return;
+    }
 
-    force_redraw_func(ui_force_redraw - 1);
+    if (current_state != last_state) {
+        printf(" %d -> %d", input, current_state);
+        force_redraw_func(0);
+    }
+    printf("\n");
 }
