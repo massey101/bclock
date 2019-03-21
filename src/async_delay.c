@@ -3,8 +3,8 @@
 
 
 static async_delay_cb_t func;
-static volatile uint32_t ms;
-static volatile uint32_t real_ms;
+static volatile ms_t ms;
+static volatile ms_t real_ms;
 
 
 ISR(TIMER0_COMPA_vect) {
@@ -36,7 +36,7 @@ void async_delay_stop() {
 
 
 void async_delay_ms(
-    uint32_t _ms,
+    ms_t _ms,
     async_delay_cb_t _func
 ) {
     ms = _ms;

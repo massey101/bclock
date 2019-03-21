@@ -3,11 +3,12 @@
 
 #include <stdint.h>
 
-typedef void (* volatile async_delay_cb_t)(uint32_t real_ms);
+typedef uint32_t ms_t;
+typedef void (* volatile async_delay_cb_t)(ms_t real_ms);
 
 
 void async_delay_ms(
-    uint32_t ms,
+    ms_t ms,
     async_delay_cb_t _func
 );
 void async_delay_stop();

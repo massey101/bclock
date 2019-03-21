@@ -17,7 +17,7 @@
 #include <stdint.h>
 #include <avr/pgmspace.h>
 
-typedef void (* volatile pcm_audio_cb_t)(uint32_t real_ms);
+typedef void (* volatile pcm_audio_cb_t)();
 
 struct pcm_audio {
     const uint16_t sample_rate;

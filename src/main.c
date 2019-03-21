@@ -23,10 +23,10 @@ vdatetime_t date;
 valarm_t alarms[NUM_ALARMS];
 const unsigned char * volatile lut;
 volatile uint8_t force_redraw = 0;
-volatile uint32_t ms_since_last_draw = 0xffffffff;
-volatile uint32_t ms_since_last_minute = 0xffffffff;
-volatile uint32_t ms_since_last_time_fetch = 0xffffffff;
-volatile uint32_t ms_since_tone_finish = 0xffffffff;
+volatile ms_t ms_since_last_draw = 0xffffffff;
+volatile ms_t ms_since_last_minute = 0xffffffff;
+volatile ms_t ms_since_last_time_fetch = 0xffffffff;
+volatile ms_t ms_since_tone_finish = 0xffffffff;
 
 
 void stop_alarm_cb() {
@@ -101,11 +101,11 @@ void print_date(vdatetime_t * date) {
 };
 
 
-typedef uint32_t (*watcher_t)(void);
+typedef ms_t (*watcher_t)(void);
 
 
-uint32_t watch(watcher_t watcher, uint32_t sleep_for_ms) {
-    uint32_t watcher_wants_ms = watcher();
+ms_t watch(watcher_t watcher, ms_t sleep_for_ms) {
+    ms_t watcher_wants_ms = watcher();
     if (watcher_wants_ms && watcher_wants_ms < sleep_for_ms) {
         sleep_for_ms = watcher_wants_ms;
     }
@@ -114,7 +114,7 @@ uint32_t watch(watcher_t watcher, uint32_t sleep_for_ms) {
 }
 
 
-uint32_t display_update_watcher() {
+ms_t display_update_watcher() {
     // Update the display and then immediately put it back to sleep.
     // That part is important.
     if (epd_IsBusy()) {
@@ -138,7 +138,7 @@ uint32_t display_update_watcher() {
 }
 
 
-uint32_t display_sleep_watcher() {
+ms_t display_sleep_watcher() {
     if (epd_IsAsleep()) {
         return 0;
     }
@@ -157,12 +157,12 @@ uint32_t display_sleep_watcher() {
 }
 
 
-void tone_done_cb(uint32_t real_ms) {
+void tone_done_cb() {
     ms_since_tone_finish = 0;
 }
 
 
-uint32_t audio_watcher() {
+ms_t audio_watcher() {
     if (! activated_alarms(alarms)) {
         return 0;
     }
@@ -180,7 +180,7 @@ uint32_t audio_watcher() {
 }
 
 
-void draw_loop(uint32_t real_ms) {
+void draw_loop(ms_t real_ms) {
     ms_since_last_draw += real_ms;
     ms_since_last_minute += real_ms;
     ms_since_last_time_fetch += real_ms;
@@ -194,7 +194,7 @@ void draw_loop(uint32_t real_ms) {
     //
     // If we predict that the seconds counter is approximately higher than 50s
     // then start checking the time every second.
-    uint32_t sleep_for_ms = 1000;
+    ms_t sleep_for_ms = 1000;
     if (ms_since_last_minute > 50000) {
         if (ms_since_last_time_fetch >= 1000) {
             ds3231_get(&date);

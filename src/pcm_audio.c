@@ -22,7 +22,6 @@ static volatile uint8_t first_sample;
 static const struct pcm_audio * volatile current_audio;
 static pcm_audio_cb_t done_cb;
 static volatile enum pcm_mode current_mode;
-static volatile uint32_t real_sample_count = 0;
 
 
 uint8_t pcm_audio_get_sample(uint16_t i) {
@@ -46,7 +45,6 @@ void stop_playback() {
 
 // This is called at 8000 Hz to load the next sample.
 ISR(TIMER1_COMPA_vect) {
-    real_sample_count++;
     if (current_mode == STARTING) {
         // Ramp up/down to the value of the first sample. Once there start
         // playing immediately.
@@ -71,10 +69,9 @@ ISR(TIMER1_COMPA_vect) {
 
         if (sample_i >= current_audio->length) {
             current_mode = FINISHING;
-            uint32_t real_ms = 1000 * real_sample_count / current_audio->sample_rate;
             current_audio = 0;
             if (done_cb != 0) {
-                done_cb(real_ms);
+                done_cb();
             }
         }
     }
@@ -179,7 +176,6 @@ void pcm_audio_play(
     TCCR2B |= _BV(CS10);
 
     sample_i = 0;
-    real_sample_count = 0;
     current_audio = pcm_audio;
     first_sample = pcm_audio_get_sample(0);
     done_cb = _done_cb;
