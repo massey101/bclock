@@ -44,7 +44,8 @@ void ui_init(
     vdatetime_t * _current_datetime,
     vdatetime_t * _last_datetime,
     valarm_t * _alarms,
-    void (*force_redraw_now)(uint8_t full_update)
+    void (*force_redraw_func)(uint8_t full_update),
+    void (*stop_alarm__func)()
 );
 void ui_input(char);
 

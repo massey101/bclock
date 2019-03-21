@@ -4,23 +4,9 @@
 #include "async_delay.h"
 
 
-// Define our callbacks and their parameters
-typedef volatile struct {
-    uint16_t counter;
-    uint32_t delay;
-    const struct pcm_audio * audio_to_play;
-    valarm_t * alarms;
-} valarm_ctx_t;
-
-valarm_ctx_t ctx;
-void wait_alarm_cb(uint32_t real_ms);
-void play_tone_alarm_cb(uint32_t real_ms);
-
-
 // Global variables stored in EEPROM
 uint32_t EEMEM e_check_sum;
 alarm_t EEMEM e_alarms[NUM_ALARMS];
-
 
 
 // Checksum for EEPROM global variables
@@ -85,54 +71,6 @@ uint8_t check_alarm(valarm_t * alarm, vdatetime_t * date) {
 
     alarm->active = -1;
     return -1;
-}
-
-
-/**
- * This callback will play a tone up to 20 times and will call wait_alarm_cb
- * when it has completed.
- */
-void play_tone_alarm_cb(uint32_t real_ms) {
-    if (!activated_alarms(ctx.alarms)) {
-        return;
-    }
-
-    if (ctx.counter >= 20) {
-        clear_alarms(ctx.alarms);
-        pcm_audio_stop();
-        return;
-    }
-
-    ctx.counter++;
-    pcm_audio_play(ctx.audio_to_play, &wait_alarm_cb);
-}
-
-
-/**
- * This callback will start an async delay to play the next tone.
- */
-void wait_alarm_cb(uint32_t real_ms) {
-    pcm_audio_stop();
-    if (!activated_alarms(ctx.alarms)) {
-        return;
-    }
-
-    async_delay_ms(ctx.delay, &play_tone_alarm_cb);
-}
-
-
-void start_alarm(valarm_t * alarms) {
-    ctx.counter = 0;
-    ctx.delay = 5000;
-    ctx.audio_to_play = &snd_buzzer;
-    ctx.alarms = alarms;
-    play_tone_alarm_cb(0);
-}
-
-
-void stop_alarm(valarm_t * alarms) {
-    clear_alarms(alarms);
-    pcm_audio_stop();
 }
 
 

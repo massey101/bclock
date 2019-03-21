@@ -16,19 +16,22 @@ static vdatetime_t * current_datetime;
 static vdatetime_t * last_datetime;
 static valarm_t * alarms;
 void (*force_redraw_func)(uint8_t full_update);
+void (*stop_alarm_func)();
 
 
 void ui_init(
     vdatetime_t * _current_datetime,
     vdatetime_t * _last_datetime,
     valarm_t * _alarms,
-    void (*_force_redraw_func)(uint8_t full_update)
+    void (*_force_redraw_func)(uint8_t full_update),
+    void (*_stop_alarm_func)()
 ) {
     current_datetime = _current_datetime;
     last_datetime = _last_datetime;
     alarms = _alarms;
     current_state = DISPLAY;
     force_redraw_func= _force_redraw_func;
+    stop_alarm_func = _stop_alarm_func;
 }
 
 
@@ -124,8 +127,8 @@ void ui_input(char input) {
     printf("In: %c", input);
 
     if (input == 's') {
-        printf("Stopping alarm\n");
-        stop_alarm(alarms);
+        printf(" Stopping alarm");
+        stop_alarm_func();
     }
 
     switch(current_state) {
@@ -142,7 +145,7 @@ void ui_input(char input) {
                     current_state = SET_DATE_HOUR1;
                     break;
                 case 'r':
-                    printf("Setting force_redraw\n");
+                    printf(" Setting force_redraw");
                     current_state = current_state;
                     ui_force_redraw = 1;
                     break;

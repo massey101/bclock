@@ -82,21 +82,6 @@ uint8_t activated_alarms(valarm_t * alarms);
 void clear_alarms(valarm_t * alarms);
 
 /**
- * Use the pcm_audio module to start the alarm. This will stop when all the
- * alarms are cleared.
- *
- * alarms - An array of NUM_ALARMS alarms to watch for deactivation
- */
-void start_alarm(valarm_t * alarms);
-
-/**
- * Stop the pcm_audio module and clear the alarms.
- *
- * alarms - An array of NUM_ALARMS alarms to clear
- */
-void stop_alarm(valarm_t * alarms);
-
-/**
  * Copy an alarm.
  *
  * dest - Destination.

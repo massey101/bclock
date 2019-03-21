@@ -26,14 +26,24 @@ volatile uint8_t force_redraw = 0;
 volatile uint32_t ms_since_last_draw = 0xffffffff;
 volatile uint32_t ms_since_last_minute = 0xffffffff;
 volatile uint32_t ms_since_last_time_fetch = 0xffffffff;
+volatile uint32_t ms_since_tone_finish = 0xffffffff;
 
 
-void button_pressed(char input) {
+void stop_alarm_cb() {
+    clear_alarms(alarms);
+
+    if (pcm_audio_busy()) {
+        pcm_audio_stop();
+    }
+}
+
+
+void button_pressed_cb(char input) {
     ui_input(input);
 }
 
 
-void force_redraw_now(uint8_t full_update) {
+void force_redraw_now_cb(uint8_t full_update) {
     force_redraw = 1;
     if (full_update) {
         force_redraw = 2;
@@ -45,7 +55,7 @@ void force_redraw_now(uint8_t full_update) {
 
 void setup() {
     /* init */
-    uart_init_interrupt(38400, &button_pressed);
+    uart_init_interrupt(38400, &button_pressed_cb);
     stdout = &uart_stdout;
     stdin = &uart_input;
     printf("init\n");
@@ -56,7 +66,7 @@ void setup() {
     epd_Sleep();
 
     view_init();
-    ui_init(&date, &last_date, alarms, &force_redraw_now);
+    ui_init(&date, &last_date, alarms, &force_redraw_now_cb, &stop_alarm_cb);
 
     init_alarms(alarms);
     alarms[0].set = 1;
@@ -91,7 +101,20 @@ void print_date(vdatetime_t * date) {
 };
 
 
-uint32_t update_display() {
+typedef uint32_t (*watcher_t)(void);
+
+
+uint32_t watch(watcher_t watcher, uint32_t sleep_for_ms) {
+    uint32_t watcher_wants_ms = watcher();
+    if (watcher_wants_ms && watcher_wants_ms < sleep_for_ms) {
+        sleep_for_ms = watcher_wants_ms;
+    }
+
+    return sleep_for_ms;
+}
+
+
+uint32_t display_update_watcher() {
     // Update the display and then immediately put it back to sleep.
     // That part is important.
     if (epd_IsBusy()) {
@@ -115,7 +138,7 @@ uint32_t update_display() {
 }
 
 
-uint32_t watch_display() {
+uint32_t display_sleep_watcher() {
     if (epd_IsAsleep()) {
         return 0;
     }
@@ -134,10 +157,36 @@ uint32_t watch_display() {
 }
 
 
+void tone_done_cb(uint32_t real_ms) {
+    ms_since_tone_finish = 0;
+}
+
+
+uint32_t audio_watcher() {
+    if (! activated_alarms(alarms)) {
+        return 0;
+    }
+
+    if (pcm_audio_busy()) {
+        return 1000;
+    }
+
+    if (ms_since_tone_finish > 5000) {
+        pcm_audio_play(&snd_buzzer, &tone_done_cb);
+        return 1000;
+    }
+
+    return 1000;
+}
+
+
 void draw_loop(uint32_t real_ms) {
     ms_since_last_draw += real_ms;
     ms_since_last_minute += real_ms;
     ms_since_last_time_fetch += real_ms;
+    if (activated_alarms(alarms)) {
+        ms_since_tone_finish += real_ms;
+    }
 
     // Until we get to around 50 seconds don't bother checking the time and
     // don't bother sleeping for a short time.
@@ -171,10 +220,7 @@ void draw_loop(uint32_t real_ms) {
             lut = lut_full_update;
         }
 
-        int display_updater_wants_ms = update_display();
-        if (display_updater_wants_ms) {
-            sleep_for_ms = display_updater_wants_ms;
-        }
+        sleep_for_ms = watch(display_update_watcher, sleep_for_ms);
     }
 
     // Check if any alarms need activating.
@@ -182,17 +228,18 @@ void draw_loop(uint32_t real_ms) {
     check_alarms(alarms, &date);
     if (activated_alarms(alarms) && !alarm_already_active) {
         printf("Activating alarm!\n");
-        start_alarm(alarms);
+        ms_since_tone_finish = 0xffffffff;
     };
 
-    datetime_copy(&last_date, &date);
+    // Check whether we should start playing a sound
+    sleep_for_ms = watch(audio_watcher, sleep_for_ms);
 
     // Check whether the display watcher wants to put the display in sleep mode
     // (IMPORTANT)
-    int display_watcher_wants_ms = watch_display();
-    if (display_watcher_wants_ms) {
-        sleep_for_ms = display_watcher_wants_ms;
-    }
+    sleep_for_ms = watch(display_sleep_watcher, sleep_for_ms);
+
+    datetime_copy(&last_date, &date);
+
 
     // Double check whether we have had a second force redraw issued since the
     // display update. If so we want to make sure we update the display again
