@@ -31,10 +31,7 @@ volatile ms_t ms_since_tone_finish = 0xffffffff;
 
 void stop_alarm_cb() {
     clear_alarms(alarms);
-
-    if (pcm_audio_busy()) {
-        pcm_audio_stop();
-    }
+    pcm_audio_stop();
 }
 
 
@@ -159,6 +156,7 @@ ms_t display_sleep_watcher() {
 
 void tone_done_cb() {
     ms_since_tone_finish = 0;
+    pcm_audio_stop();
 }
 
 
@@ -221,15 +219,16 @@ void draw_loop(ms_t real_ms) {
         }
 
         sleep_for_ms = watch(display_update_watcher, sleep_for_ms);
-    }
 
-    // Check if any alarms need activating.
-    uint8_t alarm_already_active = activated_alarms(alarms);
-    check_alarms(alarms, &date);
-    if (activated_alarms(alarms) && !alarm_already_active) {
-        printf("Activating alarm!\n");
-        ms_since_tone_finish = 0xffffffff;
-    };
+        // Check if any alarms need activating.
+        uint8_t alarm_already_active = activated_alarms(alarms);
+        check_alarms(alarms, &date);
+        if (activated_alarms(alarms) && !alarm_already_active) {
+            printf("Activating alarm!\n");
+            ms_since_tone_finish = 0xffffffff;
+        };
+
+    }
 
     // Check whether we should start playing a sound
     sleep_for_ms = watch(audio_watcher, sleep_for_ms);
