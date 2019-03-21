@@ -80,7 +80,7 @@ $(OBJS): $(OBJ)/%.o: $(SRC)/%.c $(DEPS) $(OBJ)
 	avr-gcc $(CFLAGS) -Os -c -o $@ $<
 
 flash: $(HEX)
-	avrdude -v -c $(PROGRAMMER) -P /dev/ttyACM0 -p $(REAL_TARGET) -B $(BITRATE) -F -U flash:w:$(HEX):i
+	avrdude -v -c $(PROGRAMMER) -P /dev/ttyACM0 -p $(REAL_TARGET) -B $(BITRATE) -V -U flash:w:$(HEX):i
 
 $(BIN) $(OBJ):
 	$(MKDIR_P) $@
