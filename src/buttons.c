@@ -15,14 +15,6 @@
 #define BUTTONS (_BV(PC0) | _BV(PC1))
 
 buttons_cb_t cb;
-uint8_t ct0 = 0xff, ct1 = 0xff;
-uint8_t state;
-
-uint8_t last_key_state = 0x00;
-uint8_t key_state;
-uint8_t key_press;
-
-uint8_t counter = 0;
 
 char button_to_input(uint8_t button) {
     if (button & (0x01 << 0)) {
@@ -36,39 +28,30 @@ char button_to_input(uint8_t button) {
     return '0';
 }
 
+static volatile uint8_t last_state = 0;
 
-uint8_t buttons;
-
-void check_buttons3(ms_t real_ms) {
-
-    uint8_t buttons2 = ~(BUTTONS_PIN) & BUTTONS;
-    if (buttons != buttons2) {
+ISR(PCINT1_vect) {
+    uint8_t buttons = ~(BUTTONS_PIN) & BUTTONS;
+    if (buttons == last_state) {
+        return;
+    }
+    last_state = buttons;
+    if (! buttons) {
         return;
     }
 
-    counter--;
-    if (counter == 0) {
-        if (cb != 0) {
-            cb(button_to_input(buttons));
+    for (uint8_t i = 0; i < 5; i++) {
+        _delay_ms(1);
+        uint8_t check_buttons = ~(BUTTONS_PIN) & BUTTONS;
+        if (check_buttons != buttons) {
             return;
         }
     }
 
-    reactor_call_later(TASK_BUTTONS, &check_buttons3, 1);
-    reactor_update();
-}
-
-ISR(PCINT1_vect) {
-    counter = 4;
-    buttons = ~(BUTTONS_PIN) & BUTTONS;
-    if (! buttons) {
-        reactor_cancel(TASK_BUTTONS);
-        return;
+    if (cb != 0) {
+        cb(button_to_input(buttons));
     }
 
-    reactor_cancel(TASK_BUTTONS);
-    reactor_call_later(TASK_BUTTONS, &check_buttons3, 1);
-    reactor_update();
 }
 
 void buttons_init(buttons_cb_t _cb) {
@@ -80,6 +63,4 @@ void buttons_init(buttons_cb_t _cb) {
     BUTTONS_PORT |= BUTTONS;
     PCICR |= _BV(PCIE1);
     PCMSK1 |= BUTTONS;
-
-    key_state = ~BUTTONS_PIN;
 }
