@@ -10,7 +10,7 @@ static volatile ms_t ms;
 static volatile ms_t real_ms;
 
 
-ISR(TIMER0_COMPA_vect) {
+ISR(TIMER2_COMPA_vect) {
     if (ms == 0) {
         async_delay_cb_t temp_func = func;
         async_delay_stop();
