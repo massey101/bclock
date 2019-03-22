@@ -2,7 +2,8 @@
 #include <avr/sleep.h>
 #include "async_delay.h"
 
-#define OSC_FREQ 32768
+// #define OSC_FREQ 32768
+#define OSC_FREQ 8000000
 
 
 static async_delay_cb_t func;
@@ -58,13 +59,17 @@ void async_delay_ms(
     TCCR2A &= ~_BV(WGM22) & ~_BV(WGM20);
     TCCR2A |= _BV(WGM21);
 
-    // Prescaler of 1
-    TCCR2B &= ~_BV(CS22) & ~_BV(CS21);
-    TCCR2B |= _BV(CS20);
+    // // Prescaler of 1
+    // TCCR2B &= ~_BV(CS22) & ~_BV(CS21);
+    // TCCR2B |= _BV(CS20);
+    // Prescaler of 32x
+    TCCR2B &= ~_BV(CS22);
+    TCCR2B |= _BV(CS21) | _BV(CS20);
 
     // Set the compare register
     // The target is 1000Hz
-    OCR2A = 1 * OSC_FREQ / 1000 - 1;
+    // OCR2A = 1 * OSC_FREQ / 1000 - 1;
+    OCR2A = 1 * (OSC_FREQ / 32) / 1000 - 1;
 
     // Enable interrupt when TCNT2 == OCR2A
     TIMSK2 |= _BV(OCIE2A);
