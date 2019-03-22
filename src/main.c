@@ -13,7 +13,9 @@
 #include "ds3231.h"
 #include "alarms.h"
 #include "pcm_audio.h"
-#include "async_delay.h"
+#include "reactor.h"
+#include "tasks.h"
+#include "buttons.h"
 #include "sounds.h"
 #include "ui.h"
 
@@ -23,10 +25,10 @@ vdatetime_t date;
 valarm_t alarms[NUM_ALARMS];
 const unsigned char * volatile lut;
 volatile uint8_t force_redraw = 0;
-volatile ms_t ms_since_last_draw = 0xffffffff;
-volatile ms_t ms_since_last_minute = 0xffffffff;
-volatile ms_t ms_since_last_time_fetch = 0xffffffff;
-volatile ms_t ms_since_tone_finish = 0xffffffff;
+volatile ms_t ms_since_last_draw = INT32_MAX;
+volatile ms_t ms_since_last_minute = INT32_MAX;
+volatile ms_t ms_since_last_time_fetch = INT32_MAX;
+volatile ms_t ms_since_tone_finish = INT32_MAX;
 
 
 void stop_alarm_cb() {
@@ -46,7 +48,8 @@ void force_redraw_now_cb(uint8_t full_update) {
         force_redraw = 2;
     }
 
-    async_delay_trigger();
+    reactor_trigger(TASK_MAIN, 100);
+    reactor_update();
 }
 
 
@@ -56,6 +59,7 @@ void setup() {
     stdout = &uart_stdout;
     stdin = &uart_input;
     printf("init\n");
+    buttons_init(&button_pressed_cb);
     ds3231_init();
     pcm_audio_init();
     lut = lut_full_update;
@@ -178,7 +182,7 @@ ms_t audio_watcher() {
 }
 
 
-void draw_loop(ms_t real_ms) {
+void main_task(ms_t real_ms) {
     ms_since_last_draw += real_ms;
     ms_since_last_minute += real_ms;
     ms_since_last_time_fetch += real_ms;
@@ -197,7 +201,7 @@ void draw_loop(ms_t real_ms) {
         if (ms_since_last_time_fetch >= 1000) {
             ds3231_get(&date);
             ms_since_last_time_fetch = 0;
-            ms_since_last_minute = 1000 * date.second;
+            ms_since_last_minute = 1000 * (int32_t) date.second;
             print_date(&date);
         }
     }
@@ -247,7 +251,7 @@ void draw_loop(ms_t real_ms) {
         sleep_for_ms = 500;
     }
 
-    async_delay_ms(sleep_for_ms, &draw_loop);
+    reactor_call_later(TASK_MAIN, &main_task, sleep_for_ms);
 }
 
 
@@ -255,9 +259,10 @@ int main(void)
 {
     setup();
 
-    draw_loop(0);
+    reactor_call_later(TASK_MAIN, &main_task, 0);
 
-    while (1);
+    _delay_ms(1000);
+    reactor();
 
     return 0;
 }

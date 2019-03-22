@@ -1,7 +1,6 @@
 #include <avr/eeprom.h>
 #include "alarms.h"
 #include "sounds.h"
-#include "async_delay.h"
 
 
 // Global variables stored in EEPROM
