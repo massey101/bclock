@@ -66,7 +66,7 @@ int epd_Init(const unsigned char* _lut) {
     epd_SendData(0xD6);
     epd_SendData(0x9D);
     epd_SendCommand(WRITE_VCOM_REGISTER);
-    epd_SendData(0xA8);                     // VCOM 7C
+    epd_SendData(0x2d);                     // VCOM (-0.8v) lower V = darker
     epd_SendCommand(SET_DUMMY_LINE_PERIOD);
     epd_SendData(0x1A);                     // 4 dummy lines per gate
     epd_SendCommand(SET_GATE_TIME);
