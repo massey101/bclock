@@ -1,4 +1,5 @@
 #include <avr/interrupt.h>
+#include <avr/sleep.h>
 #include "async_delay.h"
 
 
@@ -16,6 +17,9 @@ ISR(TIMER0_COMPA_vect) {
         }
     }
     ms--;
+
+    // set_sleep_mode(SLEEP_MODE_PWR_SAVE);
+    // sleep_mode();
 }
 
 
@@ -58,4 +62,7 @@ void async_delay_ms(
 
     // Enable interrupt when TCNT1 == OCR1A
     TIMSK0 |= _BV(OCIE0A);
+
+    // set_sleep_mode(SLEEP_MODE_PWR_SAVE);
+    // sleep_mode();
 }
