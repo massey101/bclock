@@ -20,15 +20,21 @@
 #include "ui.h"
 
 
+// List of tasks
+void timer_task(ms_t real_ms);
+void display_task(ms_t real_ms);
+void display_sleep_task(ms_t real_ms);
+void audio_task(ms_t real_ms);
+
+
+// Global State variables
 vdatetime_t last_date = {0};
 vdatetime_t date;
 valarm_t alarms[NUM_ALARMS];
 const unsigned char * volatile lut;
-volatile uint8_t force_redraw = 0;
 volatile ms_t ms_since_last_draw = INT32_MAX;
 volatile ms_t ms_since_last_minute = INT32_MAX;
-volatile ms_t ms_since_last_time_fetch = INT32_MAX;
-volatile ms_t ms_since_tone_finish = INT32_MAX;
+
 
 
 void stop_alarm_cb() {
@@ -43,12 +49,12 @@ void button_pressed_cb(char input) {
 
 
 void force_redraw_now_cb(uint8_t full_update) {
-    force_redraw = 1;
     if (full_update) {
-        force_redraw = 2;
+        lut = lut_full_update;
     }
 
-    reactor_trigger(TASK_MAIN, 100);
+    reactor_cancel(TASK_DISPLAY);
+    reactor_call_later(TASK_DISPLAY, &display_task, 100);
     reactor_update();
 }
 
@@ -102,28 +108,64 @@ void print_date(vdatetime_t * date) {
 };
 
 
-typedef ms_t (*watcher_t)(void);
+void tone_done_cb() {
+    pcm_audio_stop();
+    reactor_enable_sleep();
 
-
-ms_t watch(watcher_t watcher, ms_t sleep_for_ms) {
-    ms_t watcher_wants_ms = watcher();
-    if (watcher_wants_ms && watcher_wants_ms < sleep_for_ms) {
-        sleep_for_ms = watcher_wants_ms;
+    if (activated_alarms(alarms)) {
+        reactor_cancel(TASK_AUDIO);
+        reactor_call_later(TASK_AUDIO, &audio_task, 5000);
     }
-
-    return sleep_for_ms;
 }
 
 
-ms_t display_update_watcher() {
+void audio_task(ms_t real_ms) {
+    if (! activated_alarms(alarms)) {
+        return;
+    }
+
+    if (pcm_audio_busy()) {
+        reactor_cancel(TASK_AUDIO);
+        reactor_call_later(TASK_AUDIO, &audio_task, 100);
+    }
+
+    reactor_disable_sleep();
+    pcm_audio_play(&snd_buzzer, &tone_done_cb);
+}
+
+
+void display_sleep_task(ms_t real_ms) {
+    ms_since_last_draw += real_ms;
+
+    if (epd_IsAsleep()) {
+        return;
+    }
+
+    if (epd_IsBusy()) {
+        reactor_cancel(TASK_DISPLAY_SLEEP);
+        reactor_call_later(TASK_DISPLAY_SLEEP, &display_sleep_task, 100);
+        return;
+    }
+
+    if (ms_since_last_draw < 4000) {
+        reactor_cancel(TASK_DISPLAY_SLEEP);
+        reactor_call_later(TASK_DISPLAY_SLEEP, &display_sleep_task, 100);
+        return;
+    }
+
+    printf("SLEEP\n");
+    epd_Sleep();
+}
+
+
+void display_task(ms_t real_ms) {
     // Update the display and then immediately put it back to sleep.
     // That part is important.
     if (epd_IsBusy()) {
-        return 100;
+        reactor_cancel(TASK_DISPLAY);
+        reactor_call_later(TASK_DISPLAY, &display_task, 100);
+        return;
     }
-
-    force_redraw = 0;
-    ms_since_last_draw = 0;
 
     if (epd_IsAsleep()) {
         printf("WAKE\n");
@@ -134,64 +176,27 @@ ms_t display_update_watcher() {
     epd_DisplayFrame();
 
     // Reset display updating variables;
+    ms_since_last_draw = 0;
     lut = lut_partial_update;
 
-    return 0;
+    reactor_cancel(TASK_DISPLAY_SLEEP);
+    reactor_call_later(TASK_DISPLAY_SLEEP, &display_sleep_task, 100);
 }
 
 
-ms_t display_sleep_watcher() {
-    if (epd_IsAsleep()) {
-        return 0;
-    }
-
-    if (epd_IsBusy()) {
-        return 100;
-    }
-
-    if (ms_since_last_draw < 2000) {
-        return 100;
-    }
-
-    printf("SLEEP\n");
-    epd_Sleep();
-    return 0;
+void do_alarm_check() {
+    uint8_t alarm_already_active = activated_alarms(alarms);
+    check_alarms(alarms, &date);
+    if (activated_alarms(alarms) && !alarm_already_active) {
+        printf("Activating alarm!\n");
+        reactor_cancel(TASK_AUDIO);
+        reactor_call_later(TASK_AUDIO, &audio_task, 10);
+    };
 }
 
 
-void tone_done_cb() {
-    ms_since_tone_finish = 0;
-    pcm_audio_stop();
-    reactor_enable_sleep();
-}
-
-
-ms_t audio_watcher() {
-    if (! activated_alarms(alarms)) {
-        return 0;
-    }
-
-    if (pcm_audio_busy()) {
-        return 1000;
-    }
-
-    if (ms_since_tone_finish > 5000) {
-        reactor_disable_sleep();
-        pcm_audio_play(&snd_buzzer, &tone_done_cb);
-        return 1000;
-    }
-
-    return 1000;
-}
-
-
-void main_task(ms_t real_ms) {
-    ms_since_last_draw += real_ms;
+void timer_task(ms_t real_ms) {
     ms_since_last_minute += real_ms;
-    ms_since_last_time_fetch += real_ms;
-    if (activated_alarms(alarms)) {
-        ms_since_tone_finish += real_ms;
-    }
 
     // Until we get to around 50 seconds don't bother checking the time and
     // don't bother sleeping for a short time.
@@ -201,12 +206,19 @@ void main_task(ms_t real_ms) {
     // then start checking the time every second.
     ms_t sleep_for_ms = 1000;
     if (ms_since_last_minute > 50000) {
-        if (ms_since_last_time_fetch >= 1000) {
-            ds3231_get(&date);
-            ms_since_last_time_fetch = 0;
-            ms_since_last_minute = 1000 * (int32_t) date.second;
-            print_date(&date);
+        ds3231_get(&date);
+        ms_since_last_minute = 1000 * (int32_t) date.second;
+        print_date(&date);
+
+        if (! datetime_cmp(&date, &last_date, MINUTES)) {
+            do_alarm_check();
+
+            reactor_cancel(TASK_DISPLAY);
+            reactor_call_later(TASK_DISPLAY, &display_task, 5);
         }
+
+        datetime_copy(&last_date, &date);
+
     }
 
     // If we predict that the seconds counter is approximately lower than 50s
@@ -215,50 +227,7 @@ void main_task(ms_t real_ms) {
         sleep_for_ms = 50000 - ms_since_last_minute;
     }
 
-
-    if (! datetime_cmp(&date, &last_date, MINUTES)) {
-        // Check if any alarms need activating.
-        uint8_t alarm_already_active = activated_alarms(alarms);
-        check_alarms(alarms, &date);
-        if (activated_alarms(alarms) && !alarm_already_active) {
-            printf("Activating alarm!\n");
-            ms_since_tone_finish = 0xffffffff;
-        };
-    }
-
-    // Update the display. This is only triggered if there is a change in
-    // time or if it is forced to by the ui.
-    if (! datetime_cmp(&date, &last_date, MINUTES) || force_redraw) {
-
-        // Perform a full update of the screen every hour or when forced to by
-        // the ui.
-        if (! datetime_cmp(&date, &last_date, HOURS) || force_redraw == 2) {
-            lut = lut_full_update;
-        }
-
-        sleep_for_ms = watch(display_update_watcher, sleep_for_ms);
-
-
-    }
-
-    // Check whether we should start playing a sound
-    sleep_for_ms = watch(audio_watcher, sleep_for_ms);
-
-    // Check whether the display watcher wants to put the display in sleep mode
-    // (IMPORTANT)
-    sleep_for_ms = watch(display_sleep_watcher, sleep_for_ms);
-
-    datetime_copy(&last_date, &date);
-
-
-    // Double check whether we have had a second force redraw issued since the
-    // display update. If so we want to make sure we update the display again
-    // soonish.
-    if (force_redraw && sleep_for_ms > 500) {
-        sleep_for_ms = 500;
-    }
-
-    reactor_call_later(TASK_MAIN, &main_task, sleep_for_ms);
+    reactor_call_later(TASK_TIMER, &timer_task, sleep_for_ms);
 }
 
 
@@ -281,7 +250,7 @@ int main(void)
 
     DDRC |= _BV(PC3);
 
-    reactor_call_later(TASK_MAIN, &main_task, 0);
+    reactor_call_later(TASK_TIMER, &timer_task, 0);
     reactor_call_later(5, &flash_led_task, 0);
 
     _delay_ms(1000);

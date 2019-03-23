@@ -5,8 +5,10 @@
 
 // Tasks with hard coded id's start at 128
 enum tasks {
-    TASK_MAIN = 0x80,
-    TASK_BUTTONS,
+    TASK_TIMER = 0x80,
+    TASK_AUDIO,
+    TASK_DISPLAY,
+    TASK_DISPLAY_SLEEP,
 };
 
 #endif // TASKS_H
