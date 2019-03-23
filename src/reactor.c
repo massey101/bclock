@@ -2,82 +2,26 @@
 #include <limits.h>
 #include "reactor.h"
 
-#define TASK_HEAP_SIZE 8
-
 struct task {
     uint8_t active;
-    uint8_t id;
-    task_t task;
     ms_t ms;
     ms_t real_ms;
 };
 
 
-// The tasks are simply stored in a heap. Tasks not marked as active are
-// ignored and can be replaced.
-static volatile struct task task_heap[TASK_HEAP_SIZE] = {{0}};
+// Each task is given a location in the array in which it is stored.
+static volatile struct task active_tasks[NUM_TASKS] = {{0}};
 
 
-uint8_t reactor_call_later(uint8_t id, task_t task, ms_t ms) {
-
-    // Find the first empty place in the heap and insert the teask.
-    for (int i = 0; i < TASK_HEAP_SIZE; i++) {
-        if (task_heap[i].active) {
-            continue;
-        }
-
-        task_heap[i].active = 1;
-        task_heap[i].id = id;
-        task_heap[i].task = task;
-        task_heap[i].ms = ms;
-        task_heap[i].real_ms = 0;
-        return 0;
-    }
-
-    return 1;
+void reactor_call_later(enum task_id id, ms_t ms) {
+    active_tasks[id].active = 1;
+    active_tasks[id].ms = ms;
+    active_tasks[id].real_ms = 0;
 }
 
 
-uint8_t reactor_trigger(uint8_t id, ms_t ms) {
-    // Search the heap for a task with a matching id and jump the delay until
-    // the task is executed all the way down to 0.
-    for (int i = 0; i < TASK_HEAP_SIZE; i++) {
-        if (! task_heap[i].active) {
-            continue;
-        }
-
-        if (task_heap[i].id != id) {
-            continue;
-        }
-
-        if (task_heap[i].ms > ms) {
-            task_heap[i].ms = ms;
-        }
-
-        return 0;
-    }
-
-    return 1;
-}
-
-
-uint8_t reactor_cancel(uint8_t id) {
-    // Search the heap for a task with a matching id and deactivate it.
-    for (int i = 0; i < TASK_HEAP_SIZE; i++) {
-        if (! task_heap[i].active) {
-            continue;
-        }
-
-        if (task_heap[i].id != id) {
-            continue;
-        }
-
-        task_heap[i].active = 0;
-
-        return 0;
-    }
-
-    return 1;
+void reactor_cancel(enum task_id id) {
+    active_tasks[id].active = 0;
 }
 
 
@@ -107,27 +51,27 @@ void reactor() {
 
         // Check each active task to determine whether they should be
         // triggered.
-        for (int i = 0; i < TASK_HEAP_SIZE; i ++) {
-            if (! task_heap[i].active) {
+        for (int i = 0; i < NUM_TASKS; i ++) {
+            if (! active_tasks[i].active) {
                 continue;
             }
 
-            if (task_heap[i].ms <= 0) {
-                task_heap[i].active = 0;
-                task_heap[i].task(task_heap[i].real_ms);
+            if (active_tasks[i].ms <= 0) {
+                active_tasks[i].active = 0;
+                tasks[i](active_tasks[i].real_ms);
                 continue;
             }
 
         }
 
         // Check each task that is still active and how long until they should be triggered.
-        for (int i = 0; i < TASK_HEAP_SIZE; i ++) {
-            if (! task_heap[i].active) {
+        for (int i = 0; i < NUM_TASKS; i ++) {
+            if (! active_tasks[i].active) {
                 continue;
             }
 
-            if (task_heap[i].ms < soonest) {
-                soonest = task_heap[i].ms;
+            if (active_tasks[i].ms < soonest) {
+                soonest = active_tasks[i].ms;
             }
         }
 
@@ -136,13 +80,13 @@ void reactor() {
 
         // Update all of the active tasks with the amount of time that has
         // passed.
-        for (int i = 0; i < TASK_HEAP_SIZE; i ++) {
-            if (! task_heap[i].active) {
+        for (int i = 0; i < NUM_TASKS; i ++) {
+            if (! active_tasks[i].active) {
                 continue;
             }
 
-            task_heap[i].ms -= real_ms;
-            task_heap[i].real_ms += real_ms;
+            active_tasks[i].ms -= real_ms;
+            active_tasks[i].real_ms += real_ms;
         }
     }
 }

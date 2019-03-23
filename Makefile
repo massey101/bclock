@@ -37,6 +37,7 @@ OBJS = \
 	$(OBJ)/alarms.o \
 	$(OBJ)/pcm_audio.o \
 	$(OBJ)/sleep.o \
+	$(OBJ)/tasks.o \
 	$(OBJ)/reactor.o \
 	$(OBJ)/buttons.o \
 	$(OBJ)/view.o \
@@ -58,6 +59,7 @@ DEPS = \
 	$(SRC)/sounds.h \
 	$(SRC)/pcm_audio.h \
 	$(SRC)/sleep.h \
+	$(SRC)/tasks.h \
 	$(SRC)/reactor.h \
 	$(SRC)/buttons.h \
 	$(SRC)/view.h \

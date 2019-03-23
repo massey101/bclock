@@ -2,12 +2,8 @@
 #include <util/delay.h>
 #include <avr/interrupt.h>
 #include <stdint.h>
-#include "reactor.h"
-#include "tasks.h"
 #include "buttons.h"
 
-
-#include <stdio.h>
 
 #define BUTTONS_PORT PORTC
 #define BUTTONS_PIN PINC

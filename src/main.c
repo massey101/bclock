@@ -14,17 +14,9 @@
 #include "alarms.h"
 #include "pcm_audio.h"
 #include "reactor.h"
-#include "tasks.h"
 #include "buttons.h"
 #include "sounds.h"
 #include "ui.h"
-
-
-// List of tasks
-void timer_task(ms_t real_ms);
-void display_task(ms_t real_ms);
-void display_sleep_task(ms_t real_ms);
-void audio_task(ms_t real_ms);
 
 
 // Global State variables
@@ -53,8 +45,7 @@ void force_redraw_now_cb(uint8_t full_update) {
         lut = lut_full_update;
     }
 
-    reactor_cancel(TASK_DISPLAY);
-    reactor_call_later(TASK_DISPLAY, &display_task, 100);
+    reactor_call_later(TASK_DISPLAY, 100);
     reactor_update();
 }
 
@@ -113,8 +104,7 @@ void tone_done_cb() {
     reactor_enable_sleep();
 
     if (activated_alarms(alarms)) {
-        reactor_cancel(TASK_AUDIO);
-        reactor_call_later(TASK_AUDIO, &audio_task, 5000);
+        reactor_call_later(TASK_AUDIO, 5000);
     }
 }
 
@@ -125,8 +115,7 @@ void audio_task(ms_t real_ms) {
     }
 
     if (pcm_audio_busy()) {
-        reactor_cancel(TASK_AUDIO);
-        reactor_call_later(TASK_AUDIO, &audio_task, 100);
+        reactor_call_later(TASK_AUDIO, 100);
     }
 
     reactor_disable_sleep();
@@ -142,14 +131,12 @@ void display_sleep_task(ms_t real_ms) {
     }
 
     if (epd_IsBusy()) {
-        reactor_cancel(TASK_DISPLAY_SLEEP);
-        reactor_call_later(TASK_DISPLAY_SLEEP, &display_sleep_task, 100);
+        reactor_call_later(TASK_DISPLAY_SLEEP, 100);
         return;
     }
 
     if (ms_since_last_draw < 4000) {
-        reactor_cancel(TASK_DISPLAY_SLEEP);
-        reactor_call_later(TASK_DISPLAY_SLEEP, &display_sleep_task, 100);
+        reactor_call_later(TASK_DISPLAY_SLEEP, 100);
         return;
     }
 
@@ -162,8 +149,7 @@ void display_task(ms_t real_ms) {
     // Update the display and then immediately put it back to sleep.
     // That part is important.
     if (epd_IsBusy()) {
-        reactor_cancel(TASK_DISPLAY);
-        reactor_call_later(TASK_DISPLAY, &display_task, 100);
+        reactor_call_later(TASK_DISPLAY, 100);
         return;
     }
 
@@ -179,8 +165,7 @@ void display_task(ms_t real_ms) {
     ms_since_last_draw = 0;
     lut = lut_partial_update;
 
-    reactor_cancel(TASK_DISPLAY_SLEEP);
-    reactor_call_later(TASK_DISPLAY_SLEEP, &display_sleep_task, 100);
+    reactor_call_later(TASK_DISPLAY_SLEEP, 100);
 }
 
 
@@ -189,8 +174,7 @@ void do_alarm_check() {
     check_alarms(alarms, &date);
     if (activated_alarms(alarms) && !alarm_already_active) {
         printf("Activating alarm!\n");
-        reactor_cancel(TASK_AUDIO);
-        reactor_call_later(TASK_AUDIO, &audio_task, 10);
+        reactor_call_later(TASK_AUDIO, 10);
     };
 }
 
@@ -213,8 +197,7 @@ void timer_task(ms_t real_ms) {
         if (! datetime_cmp(&date, &last_date, MINUTES)) {
             do_alarm_check();
 
-            reactor_cancel(TASK_DISPLAY);
-            reactor_call_later(TASK_DISPLAY, &display_task, 5);
+            reactor_call_later(TASK_DISPLAY, 5);
         }
 
         datetime_copy(&last_date, &date);
@@ -227,18 +210,18 @@ void timer_task(ms_t real_ms) {
         sleep_for_ms = 50000 - ms_since_last_minute;
     }
 
-    reactor_call_later(TASK_TIMER, &timer_task, sleep_for_ms);
+    reactor_call_later(TASK_TIMER, sleep_for_ms);
 }
 
 
-void flash_led_task(ms_t realms) {
+void led_task(ms_t realms) {
     uint8_t c_val = PINC & _BV(PC3);
     if (c_val) {
         PORTC &= ~_BV(PC3);
-        reactor_call_later(5, &flash_led_task, 900);
+        reactor_call_later(TASK_LED, 900);
     } else {
         PORTC |= _BV(PC3);
-        reactor_call_later(5, &flash_led_task, 100);
+        reactor_call_later(TASK_LED, 100);
     }
 }
 
@@ -250,8 +233,8 @@ int main(void)
 
     DDRC |= _BV(PC3);
 
-    reactor_call_later(TASK_TIMER, &timer_task, 0);
-    reactor_call_later(5, &flash_led_task, 0);
+    reactor_call_later(TASK_TIMER, 0);
+    reactor_call_later(TASK_LED, 0);
 
     _delay_ms(1000);
     reactor();
