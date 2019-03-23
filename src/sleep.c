@@ -13,6 +13,10 @@ static volatile uint8_t ticked;
 // Used to indicate that we should abort and not go back to sleep.
 static volatile uint8_t wakeup;
 
+// Used to indicate that we should enter power save mode. The application may
+// need to disable this temporarily to do thing like play audio.
+static volatile uint8_t power_save_enabled = 1;
+
 
 ISR(TIMER2_COMPA_vect) {
     ticked = 1;
@@ -21,6 +25,16 @@ ISR(TIMER2_COMPA_vect) {
 
 void sleep_wakeup() {
     wakeup = 1;
+}
+
+
+void sleep_power_save_disable() {
+    power_save_enabled = 0;
+}
+
+
+void sleep_power_save_enable() {
+    power_save_enabled = 1;
 }
 
 
@@ -69,12 +83,18 @@ ms_t sleep_ms(ms_t ms) {
     ticked = 0;
     wakeup = 0;
 
+    // Sample sleep_enabled once to avoid a race condidiont
     // Prepare to enter sleep mode
-    set_sleep_mode(SLEEP_MODE_PWR_SAVE);
-    sleep_enable();
+    uint8_t _power_save_enabled = power_save_enabled;
+    if (_power_save_enabled) {
+        set_sleep_mode(SLEEP_MODE_PWR_SAVE);
+        sleep_enable();
+    }
 
     while (ms) {
-        sleep_cpu();
+        if (_power_save_enabled ) {
+            sleep_cpu();
+        }
 
         // Someone has requested the sleep to end.
         if (wakeup) {
@@ -92,7 +112,10 @@ ms_t sleep_ms(ms_t ms) {
         ticked = 0;
         ms--;
     }
-    sleep_disable();
+    if (_power_save_enabled ) {
+        sleep_disable();
+    }
+
     stop_timer();
 
     return target_ms - ms;

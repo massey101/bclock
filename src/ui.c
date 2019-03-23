@@ -129,6 +129,7 @@ void ui_input(char input) {
     if (input == 's') {
         printf(" Stopping alarm");
         stop_alarm_func();
+        ui_force_redraw = 1;
     }
 
     switch(current_state) {
@@ -147,7 +148,7 @@ void ui_input(char input) {
                 case 'r':
                     printf(" Setting force_redraw");
                     current_state = current_state;
-                    ui_force_redraw = 1;
+                    ui_force_redraw = 2;
                     break;
             }
             break;
@@ -254,7 +255,7 @@ void ui_input(char input) {
     }
 
     if (ui_force_redraw) {
-        force_redraw_func(ui_force_redraw);
+        force_redraw_func(ui_force_redraw - 1);
         return;
     }
 

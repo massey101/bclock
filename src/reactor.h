@@ -47,6 +47,16 @@ uint8_t reactor_cancel(uint8_t id);
 void reactor_update();
 
 /**
+ * Stop the reactor from sleeping to do things like play audio.
+ */
+void reactor_disable_sleep();
+
+/**
+ * Re-enable the reactor sleeping.
+ */
+void reactor_enable_sleep();
+
+/**
  * Start the reactor. Note: Never finishes.
  * Replaces the main while loop.
  */

@@ -20,5 +20,16 @@ ms_t sleep_ms(ms_t ms);
  */
 void sleep_wakeup();
 
+/**
+ * Disable the sleep function from entering power save mode. Useful for things
+ * like playing audio.
+ */
+void sleep_power_save_disable();
+
+/**
+ * Re-enable the sleep function entering power save mode.
+ */
+void sleep_power_save_enable();
+
 
 #endif // ASYNC_DELAY_H

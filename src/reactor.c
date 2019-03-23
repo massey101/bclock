@@ -2,9 +2,7 @@
 #include <limits.h>
 #include "reactor.h"
 
-#include <stdio.h>
-
-#define TASK_HEAP_SIZE 16
+#define TASK_HEAP_SIZE 8
 
 struct task {
     uint8_t active;
@@ -86,6 +84,18 @@ uint8_t reactor_cancel(uint8_t id) {
 void reactor_update() {
     // If we are sleeping this will wake up the reactor.
     sleep_wakeup();
+}
+
+
+void reactor_disable_sleep() {
+    // Stop the sleeper from entering power save mode.
+    sleep_power_save_disable();
+}
+
+
+void reactor_enable_sleep() {
+    // Allow the sleeper from entering power save mode.
+    sleep_power_save_enable();
 }
 
 

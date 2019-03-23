@@ -37,7 +37,7 @@ void stop_playback() {
     TCCR1B &= ~_BV(CS10);
 
     // Disable the PWM timer.
-    // TCCR0B &= ~_BV(CS00);
+    TCCR0B &= ~_BV(CS00);
 
     PORTD &= ~_BV(PD6);
 }
@@ -130,15 +130,15 @@ void pcm_audio_init() {
     TCCR0B &= ~_BV(WGM02);
 
     // Do non-inverting PWM on pin OC0A (p.155)
-    TCCR0A |= _BV(COM0B1);
-    TCCR0A &= ~_BV(COM0B0);
-
-    // No prescaler (p.158) (enables timer)
-    TCCR0B &= ~_BV(CS02) & ~_BV(CS01);
-    TCCR0B |= _BV(CS00);
+    TCCR0A |= _BV(COM0A1);
+    TCCR0A &= ~_BV(COM0A0);
 
     // Set initial pulse width to the first sample.
     OCR0A = PCM_LOW;
+
+    // No prescaler (p.158) (enables timer)
+    TCCR0B &= ~_BV(CS02) & ~_BV(CS01);
+    // TCCR0B |= _BV(CS00);
 };
 
 
@@ -169,7 +169,7 @@ void pcm_audio_play(
     TIMSK1 |= _BV(OCIE1A);
 
     // Enable the PWM timer.
-    TCCR0A |= _BV(CS00);
+    TCCR0B |= _BV(CS00);
 
     sample_i = 0;
     current_audio = pcm_audio;

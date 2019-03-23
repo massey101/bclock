@@ -82,7 +82,7 @@ void setup() {
 
     alarms[2].set = 1;
     alarms[2].hour = 12;
-    alarms[2].minute = 01;
+    alarms[2].minute = 55;
     alarms[2].dow = 0xff;
 }
 
@@ -126,6 +126,7 @@ ms_t display_update_watcher() {
     ms_since_last_draw = 0;
 
     if (epd_IsAsleep()) {
+        printf("WAKE\n");
         epd_Init(lut);
     }
     epd_ClearFrameMemory(0xff);
@@ -161,6 +162,7 @@ ms_t display_sleep_watcher() {
 void tone_done_cb() {
     ms_since_tone_finish = 0;
     pcm_audio_stop();
+    reactor_enable_sleep();
 }
 
 
@@ -174,6 +176,7 @@ ms_t audio_watcher() {
     }
 
     if (ms_since_tone_finish > 5000) {
+        reactor_disable_sleep();
         pcm_audio_play(&snd_buzzer, &tone_done_cb);
         return 1000;
     }
@@ -212,6 +215,17 @@ void main_task(ms_t real_ms) {
         sleep_for_ms = 50000 - ms_since_last_minute;
     }
 
+
+    if (! datetime_cmp(&date, &last_date, MINUTES)) {
+        // Check if any alarms need activating.
+        uint8_t alarm_already_active = activated_alarms(alarms);
+        check_alarms(alarms, &date);
+        if (activated_alarms(alarms) && !alarm_already_active) {
+            printf("Activating alarm!\n");
+            ms_since_tone_finish = 0xffffffff;
+        };
+    }
+
     // Update the display. This is only triggered if there is a change in
     // time or if it is forced to by the ui.
     if (! datetime_cmp(&date, &last_date, MINUTES) || force_redraw) {
@@ -224,13 +238,6 @@ void main_task(ms_t real_ms) {
 
         sleep_for_ms = watch(display_update_watcher, sleep_for_ms);
 
-        // Check if any alarms need activating.
-        uint8_t alarm_already_active = activated_alarms(alarms);
-        check_alarms(alarms, &date);
-        if (activated_alarms(alarms) && !alarm_already_active) {
-            printf("Activating alarm!\n");
-            ms_since_tone_finish = 0xffffffff;
-        };
 
     }
 
@@ -255,11 +262,27 @@ void main_task(ms_t real_ms) {
 }
 
 
+void flash_led_task(ms_t realms) {
+    uint8_t c_val = PINC & _BV(PC3);
+    if (c_val) {
+        PORTC &= ~_BV(PC3);
+        reactor_call_later(5, &flash_led_task, 900);
+    } else {
+        PORTC |= _BV(PC3);
+        reactor_call_later(5, &flash_led_task, 100);
+    }
+}
+
+
+
 int main(void)
 {
     setup();
 
+    DDRC |= _BV(PC3);
+
     reactor_call_later(TASK_MAIN, &main_task, 0);
+    reactor_call_later(5, &flash_led_task, 0);
 
     _delay_ms(1000);
     reactor();
