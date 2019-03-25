@@ -1699,6 +1699,8 @@ const uint8_t Courier_New16_Table [] PROGMEM =
 
 sFONT Courier_New16 = {
     Courier_New16_Table,
-    8, /* Width */
+    8,  /* Width */
     16, /* Height*/
+    0,  /* NumGlyphs */
+    0,  /* GlyphConvert*/
 };

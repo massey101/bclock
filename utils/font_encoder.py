@@ -48,15 +48,15 @@ def to_header_format(hashed, hexed):
         output += '    '
         for column in hex_row:
             output += '0x{:02x}, '.format(column)
-        output += '// '
+        output += '//'
         for column in hash_row:
             output += column
-        output += '\n'
+        output += '//\n'
 
     return output
 
 
-def generate_header(font, glyphs, name):
+def generate_header(font, glyphs, name, num_glyphs, glyph_convert):
     output = ''
     text = ''.join(glyphs)
     text_width, text_height = font.getsize(text)
@@ -65,7 +65,14 @@ def generate_header(font, glyphs, name):
     output += '#include "fonts.h"\n'
     output += '#include <avr/pgmspace.h>\n'
     output += '\n'
-    output += 'const uint8_t {}_Table [] PROGMEM = \n'.format(name)
+    if (glyph_convert != []):
+        output += 'const char {}_GlyphConvert[] PROGMEM =\n'.format(name)
+        output += '{\n'
+        for glyph in glyph_convert:
+            output += '    {},\n'.format(glyph)
+        output += '};\n\n'
+
+    output += 'const uint8_t {}_Table [] PROGMEM =\n'.format(name)
     output += '{\n'
     byte_counter = 0
     for glyph in glyphs:
@@ -90,19 +97,31 @@ def generate_header(font, glyphs, name):
     output += '    {}_Table,\n'.format(name)
     output += '    {}, /* Width */\n'.format(text_width)
     output += '    {}, /* Height*/\n'.format(text_height)
+    output += '    {}, /* NumGlyphs */\n'.format(num_glyphs)
+    if (glyph_convert != []):
+        output += '    {}_GlyphConvert, /* GlyphConvert */\n'.format(name)
+    else:
+        output += '    0, /* GlyphConvert */\n'.format(name)
+
     output += '};\n'
     return output
 
 
 def main():
     ascii_chars = [chr(c) for c in range(ord(' '), ord('~'))]
+    num_glyphs = 0
+    glyph_convert = []
+    if len(sys.argv) > 3:
+        ascii_chars = sys.argv[3].split(',')
+        num_glyphs = len(ascii_chars)
+        glyph_convert = ['\'' + glyph + '\'' for glyph in ascii_chars]
 
     filename = sys.argv[1]
     name = os.path.splitext(os.path.basename(filename))[0]
     size = int(sys.argv[2])
     font = ImageFont.truetype(filename, size)
 
-    header = generate_header(font, ascii_chars, name + str(size))
+    header = generate_header(font, ascii_chars, name + str(size), num_glyphs, glyph_convert)
     with open(name + str(size) + '.c', 'w') as f:
         f.write(header)
 

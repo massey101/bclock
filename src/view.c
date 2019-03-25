@@ -23,9 +23,9 @@ void show_time(int x, int y, vdatetime_t * datetime) {
         datetime->minute
     );
     paint_SetWidth(&paint, 40);
-    paint_SetHeight(&paint, 130);
+    paint_SetHeight(&paint, 144);
     paint_Clear(&paint, UNCOLORED);
-    paint_DrawStringAt(&paint, 0, 2, time_text, &Courier_New24, 2, COLORED);
+    paint_DrawStringAt(&paint, 0, 10, time_text, &Courier_New48, 1, COLORED);
     epd_SetFrameMemory(
         paint_GetImage(&paint),
         epd_GetWidth() - paint_GetWidth(&paint) - y,
@@ -339,19 +339,19 @@ void view_init() {
 //       0808080808080808080808080808080
 //      .................................
 // 0x00 .                               .
-// 0x08 . ┌───────────────┐ ┌─────────┐ .
-// 0x10 . │               │ │ alarm1  │ .
-// 0x18 . │ time          │ └─────────┘ .
-// 0x20 . │               │ ┌─────────┐ .
-// 0x28 . └───────────────┘ │ alarm2  │ .
-// 0x30 . ┌───────────────┐ └─────────┘ .
-// 0x38 . │  dow          │ ┌─────────┐ .
-// 0x40 . └───────────────┘ │ alarm3  │ .
-// 0x48 . ┌───────────────┐ └─────────┘ .
-// 0x50 . │  date         │ ┌─────────┐ .
-// 0x58 . └───────────────┘ │ alarm4  │ .
-// 0x60 .                   └─────────┘ .
-// 0x68 .                               .
+// 0x08 . ┌─────────────────┐           .
+// 0x10 . │                 │┌─────────┐.
+// 0x18 . │ time            ││ alarm1  │.
+// 0x20 . │                 │└─────────┘.
+// 0x28 . │                 │┌─────────┐.
+// 0x30 . └─────────────────┘│ alarm2  │.
+// 0x38 .                    └─────────┘.
+// 0x40 . ┌─────────────────┐┌─────────┐.
+// 0x48 . │  dow            ││ alarm3  │.
+// 0x50 . └─────────────────┘└─────────┘.
+// 0x58 . ┌─────────────────┐┌─────────┐.
+// 0x60 . │  date           ││ alarm4  │.
+// 0x68 . └─────────────────┘└─────────┘.
 // 0x70 .                               .
 // 0x78 .                               .
 //      .................................
@@ -363,20 +363,20 @@ void view_init() {
 //       00112233445566778899aabbccddeef
 //       0808080808080808080808080808080
 //      .................................
-// 0x00 .                   ┌─────────┐ .
-// 0x08 . ┌───────────────┐ │         │ .
-// 0x10 . │               │ │ alarm1  │ .
-// 0x18 . │ time          │ │         │ .
-// 0x20 . │               │ └─────────┘ .
-// 0x28 . └───────────────┘             .
-// 0x30 . ┌───────────────┐             .
-// 0x38 . │  dow          │             .
-// 0x40 . └───────────────┘             .
-// 0x48 . ┌───────────────┐             .
-// 0x50 . │  date         │             .
-// 0x58 . └───────────────┘             .
-// 0x60 .                               .
-// 0x68 .                               .
+// 0x00 .                               .
+// 0x08 . ┌─────────────────┐┌─────────┐.
+// 0x10 . │                 ││         │.
+// 0x18 . │ time            ││ alarm1  │.
+// 0x20 . │                 ││         │.
+// 0x28 . │                 │└─────────┘.
+// 0x30 . └─────────────────┘           .
+// 0x38 .                               .
+// 0x40 . ┌─────────────────┐           .
+// 0x48 . │  dow            │           .
+// 0x50 . └─────────────────┘           .
+// 0x58 . ┌─────────────────┐           .
+// 0x60 . │  date           │           .
+// 0x68 . └─────────────────┘           .
 // 0x70 .                               .
 // 0x78 .                               .
 //      .................................
@@ -384,18 +384,18 @@ void view_init() {
 //
 
 void view_update(vdatetime_t * datetime, valarm_t * alarms) {
-    show_time(0x08, 0x00, datetime);
-    show_dow(0x08, 0x28, datetime);
-    show_date(0x08, 0x40, datetime);
+    show_time(0x08, 0x08, datetime);
+    show_dow(0x10, 0x40, datetime);
+    show_date(0x10, 0x58, datetime);
     if (
         current_state >= SET_ALARM_SET &&
         current_state <= SET_ALARM_DOW_SUNDAY
     ) {
-        show_alarm_edit(0x98, 0x10 + selected_alarm * 0x18, &new_alarm);
+        show_alarm_edit(0xa0, 0x10 + selected_alarm * 0x18, &new_alarm);
     } else {
         for (uint8_t i = 0; i < NUM_ALARMS; i++) {
             valarm_t * alarm = &alarms[i];
-            show_alarm(0x98, 0x10 + i*0x18, alarm, i);
+            show_alarm(0xa0, 0x10 + i*0x18, alarm, i);
         }
     }
 }

@@ -115,15 +115,15 @@ void paint_DrawPixel(struct paint * paint, int x, int y, int colored) {
           return;
         }
         point_temp = x;
-        x = paint->width - y;
+        x = paint->width - 1 - y;
         y = point_temp;
         paint_DrawAbsolutePixel(paint, x, y, colored);
     } else if (paint->rotate == ROTATE_180) {
         if(x < 0 || x >= paint->width || y < 0 || y >= paint->height) {
           return;
         }
-        x = paint->width - x;
-        y = paint->height - y;
+        x = paint->width - 1 - x;
+        y = paint->height - 1 - y;
         paint_DrawAbsolutePixel(paint, x, y, colored);
     } else if (paint->rotate == ROTATE_270) {
         if(x < 0 || x >= paint->height || y < 0 || y >= paint->width) {
@@ -135,6 +135,29 @@ void paint_DrawPixel(struct paint * paint, int x, int y, int colored) {
         paint_DrawAbsolutePixel(paint, x, y, colored);
     }
 }
+
+const unsigned char * paint_LookupChar(
+    char ascii_char,
+    sFONT * font
+) {
+    unsigned int glyph_num = 0;
+    if (font->NumGlyphs == 0) {
+        glyph_num = ascii_char - ' ';
+    } else {
+        for (glyph_num = 0; glyph_num < font->NumGlyphs; glyph_num++) {
+            if (ascii_char == pgm_read_byte(&font->GlyphConvert[glyph_num])) {
+                break;
+            }
+        }
+    }
+
+    unsigned int physical_width = font->Width / 8 + (font->Width % 8 ? 1 : 0);
+    unsigned int physical_height = font->Height;
+    unsigned int char_offset = glyph_num * physical_height * physical_width;
+
+    return &font->table[char_offset];
+}
+
 
 /**
  *  @brief: this draws a charactor on the frame buffer but not refresh
@@ -149,8 +172,8 @@ void paint_DrawCharAt(
     int colored
 ) {
     int i, j;
-    unsigned int char_offset = (ascii_char - ' ') * font->Height * (font->Width / 8 + (font->Width % 8 ? 1 : 0));
-    const unsigned char* ptr = &font->table[char_offset];
+
+    const unsigned char* ptr = paint_LookupChar(ascii_char, font);
 
     for (j = 0; j < font->Height; j++) {
         for (i = 0; i < font->Width; i++) {
