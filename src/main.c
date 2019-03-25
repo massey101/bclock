@@ -19,6 +19,9 @@
 #include "ui.h"
 
 
+#define BUTTON_QUEUE_SIZE 16
+
+
 // Global State variables
 vdatetime_t last_date = {0};
 vdatetime_t date;
@@ -26,6 +29,9 @@ valarm_t alarms[NUM_ALARMS];
 const unsigned char * volatile lut;
 volatile ms_t ms_since_last_draw = INT32_MAX;
 volatile ms_t ms_since_last_minute = INT32_MAX;
+char button_queue[BUTTON_QUEUE_SIZE] = {0};
+uint8_t button_queue_start = 0;
+uint8_t button_queue_end = 0;
 
 
 
@@ -36,9 +42,41 @@ void stop_alarm_cb() {
 
 
 void button_pressed_cb(char input) {
-    ui_input(input);
+    // Check that we haven't run into the end of our queue.
+    // Note that this ignores the wrap around edge case.
+    if (button_queue_end == button_queue_start - 1) {
+        return;
+    }
+
+    // Check the edge case of the above condition.
+    if (button_queue_end == BUTTON_QUEUE_SIZE - 1) {
+        if (button_queue_start == 0) {
+            return;
+        }
+    }
+
+    // Store the input in the queue and advance it if necassary.
+    button_queue[button_queue_end] = input;
+    button_queue_end += 1;
+    if (button_queue_end >= BUTTON_QUEUE_SIZE) {
+        button_queue_end = 0;
+    }
+
+    reactor_call_later(TASK_UI, 10);
+    reactor_update();
 }
 
+
+void ui_task(ms_t real_ms) {
+    // Process all the buttons in the queue ensuring we wrap around.
+    while (button_queue_start != button_queue_end) {
+        ui_input(button_queue[button_queue_start]);
+        button_queue_start += 1;
+        if (button_queue_start >= BUTTON_QUEUE_SIZE) {
+            button_queue_start = 0;
+        }
+    }
+}
 
 void force_redraw_now_cb(uint8_t full_update) {
     if (full_update) {
@@ -46,7 +84,6 @@ void force_redraw_now_cb(uint8_t full_update) {
     }
 
     reactor_call_later(TASK_DISPLAY, 100);
-    reactor_update();
 }
 
 
