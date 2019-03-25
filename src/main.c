@@ -135,7 +135,7 @@ void display_sleep_task(ms_t real_ms) {
         return;
     }
 
-    if (ms_since_last_draw < 4000) {
+    if (ms_since_last_draw < 2000) {
         reactor_call_later(TASK_DISPLAY_SLEEP, 100);
         return;
     }
