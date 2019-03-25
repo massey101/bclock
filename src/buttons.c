@@ -8,17 +8,25 @@
 #define BUTTONS_PORT PORTC
 #define BUTTONS_PIN PINC
 #define BUTTONS_DDR DDRC
-#define BUTTONS (_BV(PC0) | _BV(PC1))
+#define BUTTONS (_BV(PC0) | _BV(PC1) | _BV(PC2) | _BV(PC3))
 
 buttons_cb_t cb;
 
 char button_to_input(uint8_t button) {
     if (button & (0x01 << 0)) {
-        return '1';
+        return 'R';
     }
 
     if (button & (0x01 << 1)) {
-        return '2';
+        return 'U';
+    }
+
+    if (button & (0x01 << 2)) {
+        return 'D';
+    }
+
+    if (button & (0x01 << 3)) {
+        return 'L';
     }
 
     return '0';

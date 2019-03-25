@@ -252,12 +252,12 @@ void timer_task(ms_t real_ms) {
 
 
 void led_task(ms_t realms) {
-    uint8_t c_val = PINC & _BV(PC3);
+    uint8_t c_val = PINB & _BV(PB0);
     if (c_val) {
-        PORTC &= ~_BV(PC3);
+        PORTB &= ~_BV(PB0);
         reactor_call_later(TASK_LED, 900);
     } else {
-        PORTC |= _BV(PC3);
+        PORTB |= _BV(PB0);
         reactor_call_later(TASK_LED, 100);
     }
 }
@@ -268,7 +268,7 @@ int main(void)
 {
     setup();
 
-    DDRC |= _BV(PC3);
+    DDRB |= _BV(PB0);
 
     reactor_call_later(TASK_TIMER, 0);
     reactor_call_later(TASK_LED, 0);

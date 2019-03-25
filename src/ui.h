@@ -11,6 +11,7 @@
 enum screen_state {
     DISPLAY,
     SET_ALARMS,
+    SET_ALARM_SET,
     SET_ALARM_HOUR1,
     SET_ALARM_HOUR2,
     SET_ALARM_MINUTE1,
