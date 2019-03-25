@@ -43,7 +43,7 @@ OBJS = \
 	$(OBJ)/view.o \
 	$(OBJ)/ui.o \
 	$(OBJ)/snd_buzzer.o \
-	$(OBJ)/Courier_New12.o \
+	$(OBJ)/Courier_New16.o \
 	$(OBJ)/Courier_New24.o
 	#$(OBJ)/snd_wakeup_call.o
 LIB =
