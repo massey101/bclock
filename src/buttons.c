@@ -44,8 +44,8 @@ ISR(PCINT1_vect) {
         return;
     }
 
-    for (uint8_t i = 0; i < 5; i++) {
-        _delay_ms(1);
+    for (uint8_t i = 0; i < 4; i++) {
+        _delay_ms(5);
         uint8_t check_buttons = ~(BUTTONS_PIN) & BUTTONS;
         if (check_buttons != buttons) {
             return;
