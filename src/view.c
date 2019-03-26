@@ -6,6 +6,7 @@
 #include "img_arrow.h"
 #include "img_arrow_down.h"
 #include "img_arrow_up.h"
+#include "img_arrow_up_large.h"
 #include "img_bell_disabled.h"
 #include "ui.h"
 
@@ -38,6 +39,7 @@ void show_time(int x, int y, vdatetime_t * datetime) {
 
 void show_dow(int x, int y, vdatetime_t * datetime) {
     paint_SetWidth(&paint, 24);
+    paint_SetHeight(&paint, 136);
     paint_Clear(&paint, UNCOLORED);
     paint_DrawStringAt(
         &paint,
@@ -60,6 +62,9 @@ void show_dow(int x, int y, vdatetime_t * datetime) {
 
 void show_date(int x, int y, vdatetime_t * datetime) {
     char date_text[16];
+    paint_SetWidth(&paint, 24);
+    paint_SetHeight(&paint, 136);
+    paint_Clear(&paint, UNCOLORED);
     sprintf(
         date_text,
         "%02u/%02u/%04u",
@@ -67,7 +72,6 @@ void show_date(int x, int y, vdatetime_t * datetime) {
         datetime->month,
         2000+datetime->year
     );
-    paint_Clear(&paint, UNCOLORED);
     paint_DrawStringAt(&paint, 0, 0, date_text, &Courier_New24, 1, COLORED);
     epd_SetFrameMemory(
         paint_GetImage(&paint),
@@ -346,12 +350,12 @@ void view_init() {
 // 0x28 . │                 │┌─────────┐.
 // 0x30 . └─────────────────┘│ alarm2  │.
 // 0x38 .                    └─────────┘.
-// 0x40 . ┌─────────────────┐┌─────────┐.
-// 0x48 . │  dow            ││ alarm3  │.
-// 0x50 . └─────────────────┘└─────────┘.
-// 0x58 . ┌─────────────────┐┌─────────┐.
-// 0x60 . │  date           ││ alarm4  │.
-// 0x68 . └─────────────────┘└─────────┘.
+// 0x40 .  ┌────────────────┐┌─────────┐.
+// 0x48 .  │  dow           ││ alarm3  │.
+// 0x50 .  └────────────────┘└─────────┘.
+// 0x58 .  ┌────────────────┐┌─────────┐.
+// 0x60 .  │  date          ││ alarm4  │.
+// 0x68 .  └────────────────┘└─────────┘.
 // 0x70 .                               .
 // 0x78 .                               .
 //      .................................
@@ -371,22 +375,199 @@ void view_init() {
 // 0x28 . │                 │└─────────┘.
 // 0x30 . └─────────────────┘           .
 // 0x38 .                               .
-// 0x40 . ┌─────────────────┐           .
-// 0x48 . │  dow            │           .
-// 0x50 . └─────────────────┘           .
-// 0x58 . ┌─────────────────┐           .
-// 0x60 . │  date           │           .
-// 0x68 . └─────────────────┘           .
+// 0x40 .  ┌────────────────┐           .
+// 0x48 .  │  dow           │           .
+// 0x50 .  └────────────────┘           .
+// 0x58 .  ┌────────────────┐           .
+// 0x60 .  │  date          │           .
+// 0x68 .  └────────────────┘           .
 // 0x70 .                               .
 // 0x78 .                               .
 //      .................................
 //
 //
 
+// Display outline for time edit display
+//
+//       00112233445566778899aabbccddeef
+//       0808080808080808080808080808080
+//      .................................
+// 0x00 .                               .
+// 0x08 . ┌─────────────────┐┌─────────┐.
+// 0x10 . │                 ││         │.
+// 0x18 . │ time            ││ alarm1  │.
+// 0x20 . │                 ││         │.
+// 0x28 . │                 │└─────────┘.
+// 0x30 . └─────────────────┘           .
+// 0x38 . ┌─pointer─────────┐           .
+// 0x40 . └─────────────────┘           .
+// 0x48 .                               .
+// 0x50 .                               .
+// 0x58 .                               .
+// 0x60 .                               .
+// 0x68 .                               .
+// 0x70 .                               .
+// 0x78 .                               .
+//      .................................
+//
+//
+
+// Display outline for DOW edit display
+//
+//       00112233445566778899aabbccddeef
+//       0808080808080808080808080808080
+//      .................................
+// 0x00 .                               .
+// 0x08 . ┌─────────────────┐┌─────────┐.
+// 0x10 . │                 ││         │.
+// 0x18 . │ time            ││ alarm1  │.
+// 0x20 . │                 ││         │.
+// 0x28 . │                 │└─────────┘.
+// 0x30 . └─────────────────┘           .
+// 0x38 .                               .
+// 0x40 .  ┌────────────────┐           .
+// 0x48 .>>│  dow           │           .
+// 0x50 .  └────────────────┘           .
+// 0x58 .                               .
+// 0x60 .                               .
+// 0x68 .                               .
+// 0x70 .                               .
+// 0x78 .                               .
+//      .................................
+//
+//
+// Display outline for date edit display
+//
+//       00112233445566778899aabbccddeef
+//       0808080808080808080808080808080
+//      .................................
+// 0x00 .                               .
+// 0x08 . ┌─────────────────┐┌─────────┐.
+// 0x10 . │                 ││         │.
+// 0x18 . │ time            ││ alarm1  │.
+// 0x20 . │                 ││         │.
+// 0x28 . │                 │└─────────┘.
+// 0x30 . └─────────────────┘           .
+// 0x38 .                               .
+// 0x40 .  ┌────────────────┐           .
+// 0x48 .  │  dow           │           .
+// 0x50 .  └────────────────┘           .
+// 0x58 .  ┌────────────────┐           .
+// 0x60 .  │  date          │           .
+// 0x68 .  └────────────────┘           .
+// 0x70 .   ^ ^   ^ ^    ^ ^            .
+// 0x78 .                               .
+//      .................................
+//
+//
+
+void show_dow_pointer(int x, int y) {
+    paint_SetWidth(&paint, 8);
+    paint_SetHeight(&paint, 16);
+    paint_Clear(&paint, UNCOLORED);
+
+    paint_DrawImageAt(&paint, 4, 0, img_arrow, 1, COLORED);
+    epd_SetFrameMemory(
+        paint_GetImage(&paint),
+        epd_GetWidth() - paint_GetWidth(&paint) - y,
+        x,
+        paint_GetWidth(&paint),
+        paint_GetHeight(&paint)
+    );
+}
+
+void show_date_pointer(int epd_x, int epd_y) {
+    int x, y;
+
+    paint_SetWidth(&paint, 8);
+    paint_SetHeight(&paint, 136);
+    paint_Clear(&paint, UNCOLORED);
+
+    switch(current_state) {
+        case SET_DATE_DAY1:         x = 3 + 13*0; y = 0; break;
+        case SET_DATE_DAY2:         x = 3 + 13*1; y = 0; break;
+        case SET_DATE_MONTH1:       x = 3 + 13*3; y = 0; break;
+        case SET_DATE_MONTH2:       x = 3 + 13*4; y = 0; break;
+        case SET_DATE_YEAR1:        x = 3 + 13*8; y = 0; break;
+        case SET_DATE_YEAR2:        x = 3 + 13*9; y = 0; break;
+        default: x = 0; y = 0; break;
+    }
+
+    paint_DrawImageAt(&paint, x, y, img_arrow_up, 1, COLORED);
+    epd_SetFrameMemory(
+        paint_GetImage(&paint),
+        epd_GetWidth() - paint_GetWidth(&paint) - epd_y,
+        epd_x,
+        paint_GetWidth(&paint),
+        paint_GetHeight(&paint)
+    );
+
+}
+
+void show_time_pointer(int epd_x, int epd_y) {
+    int x, y;
+
+    paint_SetWidth(&paint, 16);
+    paint_SetHeight(&paint, 144);
+    paint_Clear(&paint, UNCOLORED);
+
+    switch(current_state) {
+        case SET_DATE_HOUR1:         x = 6 + 29*0; y = 0; break;
+        case SET_DATE_HOUR2:         x = 6 + 29*1; y = 0; break;
+        case SET_DATE_MINUTE1:       x = 6 + 29*3; y = 0; break;
+        case SET_DATE_MINUTE2:       x = 6 + 29*4; y = 0; break;
+        default: x = 0; y = 0; break;
+    }
+
+    paint_DrawImageAt(&paint, x, y, img_arrow_up_large, 1, COLORED);
+    epd_SetFrameMemory(
+        paint_GetImage(&paint),
+        epd_GetWidth() - paint_GetWidth(&paint) - epd_y,
+        epd_x,
+        paint_GetWidth(&paint),
+        paint_GetHeight(&paint)
+    );
+}
+
 void view_update(vdatetime_t * datetime, valarm_t * alarms) {
+    if (
+        current_state >= SET_DATE_HOUR1 &&
+        current_state <= SET_DATE_YEAR2
+    ) {
+        datetime = &new_datetime;
+    }
+
     show_time(0x08, 0x08, datetime);
-    show_dow(0x10, 0x40, datetime);
-    show_date(0x10, 0x58, datetime);
+    if (
+        current_state >= SET_DATE_HOUR1 &&
+        current_state <= SET_DATE_MINUTE2
+    ) {
+        show_time_pointer(0x08, 0x38);
+    }
+
+    if (
+        current_state < SET_DATE_HOUR1 ||
+        current_state > SET_DATE_MINUTE2
+    ) {
+        show_dow(0x10, 0x40, datetime);
+        if (current_state == SET_DATE_DOW) {
+            show_dow_pointer(0x00, 0x48);
+        }
+    }
+
+    if (
+        current_state < SET_DATE_HOUR1 ||
+        current_state > SET_DATE_DOW
+    ) {
+        show_date(0x10, 0x58, datetime);
+        if (
+            current_state >= SET_DATE_DAY1 &&
+            current_state <= SET_DATE_YEAR2
+        ) {
+            show_date_pointer(0x10, 0x70);
+        }
+    }
+
     if (
         current_state >= SET_ALARM_SET &&
         current_state <= SET_ALARM_DOW_SUNDAY

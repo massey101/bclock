@@ -234,14 +234,17 @@ void ui_input(char input) {
 
         case SET_DATE_HOUR1:
             ui_force_redraw = basic_input(&new_datetime.hour, 10, 0, 24, input);
+            if (current_state == SET_DATE_HOUR1 - 1) {
+                current_state = DISPLAY;
+            }
             break;
         case SET_DATE_HOUR2:
             ui_force_redraw = basic_input(&new_datetime.hour, 1, 0, 24, input);
             break;
-        case SET_DATE_MINUTE_1:
+        case SET_DATE_MINUTE1:
             ui_force_redraw = basic_input(&new_datetime.minute, 10, 0, 60, input);
             break;
-        case SET_DATE_MINUTE_2:
+        case SET_DATE_MINUTE2:
             ui_force_redraw = basic_input(&new_datetime.minute, 1, 0, 60, input);
             break;
         case SET_DATE_DOW:
