@@ -220,11 +220,14 @@ void timer_task(ms_t real_ms) {
         if (! datetime_cmp(&date, &last_date, MINUTES)) {
             do_alarm_check();
 
+            if (! datetime_cmp(&date, &last_date, DAYS)) {
+                lut = lut_full_update;
+            }
+
             reactor_call_later(TASK_DISPLAY, 5);
         }
 
         datetime_copy(&last_date, &date);
-
     }
 
     // If we predict that the seconds counter is approximately lower than 50s
