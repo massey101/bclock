@@ -104,20 +104,6 @@ void setup() {
     ui_init(&date, &last_date, alarms, &force_redraw_now_cb, &stop_alarm_cb);
 
     init_alarms(alarms);
-    alarms[0].set = 1;
-    alarms[0].hour = 7;
-    alarms[0].minute = 30;
-    alarms[0].dow = 0x3e;
-
-    alarms[1].set = 1;
-    alarms[1].hour = 8;
-    alarms[1].minute = 30;
-    alarms[1].dow = 0xc0;
-
-    alarms[2].set = 1;
-    alarms[2].hour = 12;
-    alarms[2].minute = 55;
-    alarms[2].dow = 0xff;
 }
 
 
