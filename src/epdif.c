@@ -99,7 +99,8 @@ int epd_if_Init() {
     DDRB |= (1<<PB3) | (1<<PB5) | (1<<PB2);
     DDRD |= (1<<PD7) | (1<<PD3);
     DDRD &= ~(1<<PD5);
-    SPCR |= (1<<SPE) | (1<<MSTR) | (1<<SPR0);
+    SPCR |= (1<<SPE) | (1<<MSTR);
+    SPSR |= (1<<SPI2X);
     PORTB |= (1<<PB2);
     return 0;
 }
