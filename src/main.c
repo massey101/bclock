@@ -89,7 +89,7 @@ void force_redraw_now_cb(uint8_t full_update) {
 
 void setup() {
     /* init */
-    uart_init_interrupt(38400, &button_pressed_cb);
+    uart_init(38400);
     stdout = &uart_stdout;
     stdin = &uart_input;
     printf("init\n");
