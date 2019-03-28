@@ -36,6 +36,7 @@ OBJS = \
 	$(OBJ)/epdpaint.o \
 	$(OBJ)/alarms.o \
 	$(OBJ)/pcm_audio.o \
+	$(OBJ)/pam8403.o \
 	$(OBJ)/sleep.o \
 	$(OBJ)/tasks.o \
 	$(OBJ)/reactor.o \
@@ -59,6 +60,7 @@ DEPS = \
 	$(SRC)/alarms.h \
 	$(SRC)/sounds.h \
 	$(SRC)/pcm_audio.h \
+	$(SRC)/pam8403.h \
 	$(SRC)/sleep.h \
 	$(SRC)/tasks.h \
 	$(SRC)/reactor.h \

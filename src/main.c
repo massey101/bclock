@@ -13,6 +13,7 @@
 #include "ds3231.h"
 #include "alarms.h"
 #include "pcm_audio.h"
+#include "pam8403.h"
 #include "reactor.h"
 #include "buttons.h"
 #include "sounds.h"
@@ -38,6 +39,7 @@ uint8_t button_queue_end = 0;
 void stop_alarm_cb() {
     clear_alarms(alarms);
     pcm_audio_stop();
+    pam8403_disable();
 }
 
 
@@ -96,6 +98,7 @@ void setup() {
     buttons_init(&button_pressed_cb);
     ds3231_init();
     pcm_audio_init();
+    pam8403_init();
     lut = lut_full_update;
     epd_Init(lut);
     epd_Sleep();
@@ -128,12 +131,15 @@ void tone_done_cb() {
 
     if (activated_alarms(alarms)) {
         reactor_call_later(TASK_AUDIO, 5000);
+    } else {
+        pam8403_disable();
     }
 }
 
 
 void audio_task(ms_t real_ms) {
     if (! activated_alarms(alarms)) {
+        pam8403_disable();
         return;
     }
 
@@ -197,6 +203,7 @@ void do_alarm_check() {
     check_alarms(alarms, &date);
     if (activated_alarms(alarms) && !alarm_already_active) {
         printf("Activating alarm!\n");
+        pam8403_enable();
         reactor_call_later(TASK_AUDIO, 10);
     };
 }
