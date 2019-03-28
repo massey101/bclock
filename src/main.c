@@ -130,7 +130,7 @@ void tone_done_cb() {
     reactor_enable_sleep();
 
     if (activated_alarms(alarms)) {
-        reactor_call_later(TASK_AUDIO, 5000);
+        reactor_call_later(TASK_AUDIO, 300);
     } else {
         pam8403_disable();
     }
