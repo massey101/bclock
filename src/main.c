@@ -64,7 +64,7 @@ void button_pressed_cb(char input) {
         button_queue_end = 0;
     }
 
-    reactor_call_later(TASK_UI, 10);
+    reactor_call_later(TASK_UI, 5);
     reactor_update();
 }
 
@@ -85,7 +85,7 @@ void force_redraw_now_cb(uint8_t full_update) {
         lut = lut_full_update;
     }
 
-    reactor_call_later(TASK_DISPLAY, 100);
+    reactor_call_later(TASK_DISPLAY, 3);
 }
 
 
@@ -160,12 +160,12 @@ void display_sleep_task(ms_t real_ms) {
     }
 
     if (epd_IsBusy()) {
-        reactor_call_later(TASK_DISPLAY_SLEEP, 100);
+        reactor_call_later(TASK_DISPLAY_SLEEP, 10);
         return;
     }
 
-    if (ms_since_last_draw < 2000) {
-        reactor_call_later(TASK_DISPLAY_SLEEP, 100);
+    if (ms_since_last_draw < 200) {
+        reactor_call_later(TASK_DISPLAY_SLEEP, 10);
         return;
     }
 
@@ -178,7 +178,7 @@ void display_task(ms_t real_ms) {
     // Update the display and then immediately put it back to sleep.
     // That part is important.
     if (epd_IsBusy()) {
-        reactor_call_later(TASK_DISPLAY, 100);
+        reactor_call_later(TASK_DISPLAY, 10);
         return;
     }
 
@@ -194,7 +194,7 @@ void display_task(ms_t real_ms) {
     ms_since_last_draw = 0;
     lut = lut_partial_update;
 
-    reactor_call_later(TASK_DISPLAY_SLEEP, 100);
+    reactor_call_later(TASK_DISPLAY_SLEEP, 10);
 }
 
 
@@ -269,7 +269,7 @@ int main(void)
     reactor_call_later(TASK_TIMER, 0);
     reactor_call_later(TASK_LED, 0);
 
-    _delay_ms(1000);
+    _delay_ms(10);
     reactor();
 
     return 0;
