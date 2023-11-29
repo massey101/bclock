@@ -39,10 +39,6 @@ ISR(PCINT1_vect) {
     if (buttons == last_state) {
         return;
     }
-    last_state = buttons;
-    if (! buttons) {
-        return;
-    }
 
     for (uint8_t i = 0; i < 4; i++) {
         _delay_ms(5);
@@ -50,6 +46,11 @@ ISR(PCINT1_vect) {
         if (check_buttons != buttons) {
             return;
         }
+    }
+
+    last_state = buttons;
+    if (! buttons) {
+        return;
     }
 
     if (cb != 0) {
