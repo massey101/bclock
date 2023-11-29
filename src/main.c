@@ -110,7 +110,7 @@ void setup() {
 }
 
 
-void print_date(vdatetime_t * date) {
+void print_date(const vdatetime_t * date) {
    printf(
         "%02u:%02u:%02u %04u-%02u-%02u %02u %s\n",
         date->hour,
