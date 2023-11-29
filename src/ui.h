@@ -48,6 +48,6 @@ void ui_init(
     void (*force_redraw_func)(uint8_t full_update),
     void (*stop_alarm__func)()
 );
-void ui_input(char);
+int ui_input(char);
 
 #endif // STATES_H

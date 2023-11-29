@@ -106,7 +106,8 @@ enum screen_state bool_input(volatile uint8_t * dest, uint8_t offset, uint8_t in
 }
 
 
-void ui_input(char input) {
+// Returns whether the screen needs to be redrawn
+int ui_input(char input) {
     uint8_t last_state = current_state;
     uint8_t ui_force_redraw = 0;
 
@@ -127,7 +128,6 @@ void ui_input(char input) {
                     break;
                 case 'U':
                     printf(" Setting force_redraw");
-                    current_state = current_state;
                     ui_force_redraw = 2;
                     break;
                 case 'D':
@@ -277,15 +277,16 @@ void ui_input(char input) {
             break;
     }
 
-    if (ui_force_redraw) {
-        force_redraw_func(ui_force_redraw - 1);
-        return;
-    }
-
     if (current_state != last_state) {
         printf(" %c -> %d", input, current_state);
         force_redraw_func(0);
+
+        if (ui_force_redraw == 0) {
+            ui_force_redraw = 1;
+        }
     }
 
     printf("\n");
+
+    return ui_force_redraw;
 }

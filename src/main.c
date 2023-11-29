@@ -69,23 +69,30 @@ void button_pressed_cb(char input) {
 }
 
 
-void ui_task(ms_t real_ms) {
-    // Process all the buttons in the queue ensuring we wrap around.
-    while (button_queue_start != button_queue_end) {
-        ui_input(button_queue[button_queue_start]);
-        button_queue_start += 1;
-        if (button_queue_start >= BUTTON_QUEUE_SIZE) {
-            button_queue_start = 0;
-        }
-    }
-}
-
 void force_redraw_now_cb(uint8_t full_update) {
     if (full_update) {
         lut = lut_full_update;
     }
 
     reactor_call_later(TASK_DISPLAY, 3);
+}
+
+
+void ui_task(ms_t real_ms) {
+    // Process all the buttons in the queue ensuring we wrap around.
+    int ui_force_redraw = 0;
+    while (button_queue_start != button_queue_end) {
+        int force_redraw = ui_input(button_queue[button_queue_start]);
+        if (force_redraw > ui_force_redraw) {
+            ui_force_redraw = force_redraw;
+        }
+        button_queue_start += 1;
+        if (button_queue_start >= BUTTON_QUEUE_SIZE) {
+            button_queue_start = 0;
+        }
+    }
+
+    force_redraw_now_cb(ui_force_redraw - 1);
 }
 
 
