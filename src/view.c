@@ -11,7 +11,7 @@
 #include "ui.h"
 
 
-static unsigned char canvas[1024];
+static unsigned char canvas[760];
 static struct paint paint;
 
 
