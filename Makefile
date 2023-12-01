@@ -35,7 +35,7 @@ OBJS = \
 	$(OBJ)/epdif.o \
 	$(OBJ)/epdpaint.o \
 	$(OBJ)/alarms.o \
-	$(OBJ)/pcm_audio.o \
+	$(OBJ)/pcm_tones.o \
 	$(OBJ)/pam8403.o \
 	$(OBJ)/sleep.o \
 	$(OBJ)/tasks.o \
@@ -43,11 +43,9 @@ OBJS = \
 	$(OBJ)/buttons.o \
 	$(OBJ)/view.o \
 	$(OBJ)/ui.o \
-	$(OBJ)/snd_buzzer.o \
 	$(OBJ)/Courier_New16.o \
 	$(OBJ)/Courier_New24.o \
 	$(OBJ)/Courier_New48.o
-	#$(OBJ)/snd_wakeup_call.o
 LIB =
 DEPS = \
 	$(SRC)/uart.h \
@@ -59,7 +57,7 @@ DEPS = \
 	$(SRC)/epdpaint.h \
 	$(SRC)/alarms.h \
 	$(SRC)/sounds.h \
-	$(SRC)/pcm_audio.h \
+	$(SRC)/pcm_tones.h \
 	$(SRC)/pam8403.h \
 	$(SRC)/sleep.h \
 	$(SRC)/tasks.h \

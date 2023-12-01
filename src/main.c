@@ -12,7 +12,7 @@
 #include "view.h"
 #include "ds3231.h"
 #include "alarms.h"
-#include "pcm_audio.h"
+#include "pcm_tones.h"
 #include "pam8403.h"
 #include "reactor.h"
 #include "buttons.h"
@@ -33,15 +33,22 @@ volatile ms_t ms_since_last_minute = INT32_MAX;
 char button_queue[BUTTON_QUEUE_SIZE] = {0};
 uint8_t button_queue_start = 0;
 uint8_t button_queue_end = 0;
+mHz_t tone_freq = 440000;
 
 
 
 void stop_alarm_cb() {
     clear_alarms(alarms);
-    pcm_audio_stop();
+    pcm_tones_stop();
     pam8403_disable();
 }
 
+void start_alarm_cb(mHz_t freq) {
+    alarms[0].active = -1;
+    pam8403_enable();
+    reactor_call_later(TASK_AUDIO, 10);
+    tone_freq = freq;
+}
 
 void button_pressed_cb(char input) {
     // Check that we haven't run into the end of our queue.
@@ -68,6 +75,8 @@ void button_pressed_cb(char input) {
     reactor_update();
 }
 
+void tone_done_cb();
+
 
 void force_redraw_now_cb(uint8_t full_update) {
     if (full_update) {
@@ -92,7 +101,7 @@ void ui_task(ms_t real_ms) {
         }
     }
 
-    force_redraw_now_cb(ui_force_redraw - 1);
+    force_redraw_now_cb(ui_force_redraw == 2);
 }
 
 
@@ -104,14 +113,14 @@ void setup() {
     printf("init\n");
     buttons_init(&button_pressed_cb);
     ds3231_init();
-    pcm_audio_init();
+    pcm_tones_init();
     pam8403_init();
     lut = lut_full_update;
     epd_Init(lut);
     epd_Sleep();
 
     view_init();
-    ui_init(&date, &last_date, alarms, &force_redraw_now_cb, &stop_alarm_cb);
+    ui_init(&date, &last_date, alarms, &force_redraw_now_cb, &stop_alarm_cb, &start_alarm_cb);
 
     init_alarms(alarms);
 }
@@ -133,16 +142,16 @@ void print_date(const vdatetime_t * date) {
 
 
 void tone_done_cb() {
-    pcm_audio_stop();
+    printf("DONE\n");
+    pcm_tones_stop();
     reactor_enable_sleep();
 
     if (activated_alarms(alarms)) {
-        reactor_call_later(TASK_AUDIO, 300);
+        reactor_call_later(TASK_AUDIO, 1000);
     } else {
         pam8403_disable();
     }
 }
-
 
 void audio_task(ms_t real_ms) {
     if (! activated_alarms(alarms)) {
@@ -150,12 +159,13 @@ void audio_task(ms_t real_ms) {
         return;
     }
 
-    if (pcm_audio_busy()) {
+    if (pcm_tones_busy()) {
         reactor_call_later(TASK_AUDIO, 100);
     }
 
     reactor_disable_sleep();
-    pcm_audio_play(&snd_buzzer, &tone_done_cb);
+    printf("PLAYING\n");
+    pcm_tones_play(tone_freq, 10000, 255, &tone_done_cb);
 }
 
 
@@ -254,6 +264,12 @@ void timer_task(ms_t real_ms) {
 }
 
 
+// int free_ram() {
+//     extern int __heap_start, *__brkval;
+//     int v;
+//     return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
+// }
+
 void led_task(ms_t realms) {
     uint8_t c_val = PINB & _BV(PB0);
     if (c_val) {
@@ -262,10 +278,9 @@ void led_task(ms_t realms) {
     } else {
         PORTB |= _BV(PB0);
         reactor_call_later(TASK_LED, 100);
+        // printf("ram: %d/2048\n", free_ram());
     }
 }
-
-
 
 int main(void)
 {

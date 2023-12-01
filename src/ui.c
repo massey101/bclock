@@ -11,12 +11,14 @@ enum screen_state current_state;
 vdatetime_t new_datetime;
 valarm_t new_alarm;
 volatile uint8_t selected_alarm;
+volatile uint32_t tone_debug_frequency;
 
 static vdatetime_t * current_datetime;
 static vdatetime_t * last_datetime;
 static valarm_t * alarms;
 void (*force_redraw_func)(uint8_t full_update);
 void (*stop_alarm_func)();
+void (*start_alarm_func)(uint32_t freq);
 
 
 void ui_init(
@@ -24,7 +26,8 @@ void ui_init(
     vdatetime_t * _last_datetime,
     valarm_t * _alarms,
     void (*_force_redraw_func)(uint8_t full_update),
-    void (*_stop_alarm_func)()
+    void (*_stop_alarm_func)(),
+    void (*_start_alarm_func)(uint32_t freq)
 ) {
     current_datetime = _current_datetime;
     last_datetime = _last_datetime;
@@ -32,6 +35,8 @@ void ui_init(
     current_state = DISPLAY;
     force_redraw_func= _force_redraw_func;
     stop_alarm_func = _stop_alarm_func;
+    start_alarm_func = _start_alarm_func;
+    tone_debug_frequency = 440000;
 }
 
 
@@ -111,9 +116,29 @@ int ui_input(char input) {
     uint8_t last_state = current_state;
     uint8_t ui_force_redraw = 0;
 
-    printf("In: %c", input);
-
     switch(current_state) {
+
+        case TONE_DEBUG:
+            switch(input) {
+                case 'R':
+                    tone_debug_frequency += 10000;
+                    printf("t%lu\n", (unsigned long) tone_debug_frequency);
+                    break;
+                case 'L':
+                    tone_debug_frequency -= 10000;
+                    printf("t%lu\n", (unsigned long) tone_debug_frequency);
+                    break;
+                case 'U':
+                    printf("st%lu\n", (unsigned long) tone_debug_frequency);
+                    start_alarm_func(tone_debug_frequency);
+                    break;
+                case 'D':
+                    printf("ed\n");
+                    stop_alarm_func();
+                    current_state = DISPLAY;
+                    break;
+            }
+            break;
 
         case DISPLAY:
             switch(input) {
@@ -127,11 +152,11 @@ int ui_input(char input) {
                     current_state = SET_DATE_HOUR1;
                     break;
                 case 'U':
-                    printf(" Setting force_redraw");
-                    ui_force_redraw = 2;
+                    current_state = TONE_DEBUG;
+                    printf("t%lu\n", (unsigned long) tone_debug_frequency);
                     break;
                 case 'D':
-                    printf(" Stopping alarm");
+                    printf("stop\n");
                     stop_alarm_func();
                     ui_force_redraw = 1;
                     break;
@@ -278,15 +303,12 @@ int ui_input(char input) {
     }
 
     if (current_state != last_state) {
-        printf(" %c -> %d", input, current_state);
         force_redraw_func(0);
 
         if (ui_force_redraw == 0) {
             ui_force_redraw = 1;
         }
     }
-
-    printf("\n");
 
     return ui_force_redraw;
 }

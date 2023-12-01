@@ -34,6 +34,7 @@ enum screen_state {
     SET_DATE_MONTH2,
     SET_DATE_YEAR1,
     SET_DATE_YEAR2,
+    TONE_DEBUG,
 };
 
 extern enum screen_state current_state;
@@ -46,7 +47,8 @@ void ui_init(
     vdatetime_t * _last_datetime,
     valarm_t * _alarms,
     void (*force_redraw_func)(uint8_t full_update),
-    void (*stop_alarm__func)()
+    void (*stop_alarm_func)(),
+    void (*start_alarm_func)(uint32_t freq)
 );
 int ui_input(char);
 
