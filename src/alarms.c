@@ -16,7 +16,7 @@ void init_alarm(valarm_t * alarm) {
     alarm->set = 0;
     alarm->hour = 0;
     alarm->minute = 0;
-    alarm->dow = 0;
+    alarm->dow = 0xfe;
 }
 
 
