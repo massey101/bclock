@@ -1,0 +1,107 @@
+[
+  {
+    "directory": ".",
+    "command": "avr-gcc -Wall -mmcu=atmega328 -Os -std=c99 -DF_CPU=8000000UL -Os -c -o obj/main.o src/main.c",
+    "file": "src/main.c"
+  },
+  {
+    "directory": ".",
+    "command": "avr-gcc -Wall -mmcu=atmega328 -Os -std=c99 -DF_CPU=8000000UL -Os -c -o obj/uart.o src/uart.c",
+    "file": "src/uart.c"
+  },
+  {
+    "directory": ".",
+    "command": "avr-gcc -Wall -mmcu=atmega328 -Os -std=c99 -DF_CPU=8000000UL -Os -c -o obj/ds3231.o src/ds3231.c",
+    "file": "src/ds3231.c"
+  },
+  {
+    "directory": ".",
+    "command": "avr-gcc -Wall -mmcu=atmega328 -Os -std=c99 -DF_CPU=8000000UL -Os -c -o obj/datetime.o src/datetime.c",
+    "file": "src/datetime.c"
+  },
+  {
+    "directory": ".",
+    "command": "avr-gcc -Wall -mmcu=atmega328 -Os -std=c99 -DF_CPU=8000000UL -Os -c -o obj/twi.o src/twi.c",
+    "file": "src/twi.c"
+  },
+  {
+    "directory": ".",
+    "command": "avr-gcc -Wall -mmcu=atmega328 -Os -std=c99 -DF_CPU=8000000UL -Os -c -o obj/epd2in13.o src/epd2in13.c",
+    "file": "src/epd2in13.c"
+  },
+  {
+    "directory": ".",
+    "command": "avr-gcc -Wall -mmcu=atmega328 -Os -std=c99 -DF_CPU=8000000UL -Os -c -o obj/epdif.o src/epdif.c",
+    "file": "src/epdif.c"
+  },
+  {
+    "directory": ".",
+    "command": "avr-gcc -Wall -mmcu=atmega328 -Os -std=c99 -DF_CPU=8000000UL -Os -c -o obj/epdpaint.o src/epdpaint.c",
+    "file": "src/epdpaint.c"
+  },
+  {
+    "directory": ".",
+    "command": "avr-gcc -Wall -mmcu=atmega328 -Os -std=c99 -DF_CPU=8000000UL -Os -c -o obj/alarms.o src/alarms.c",
+    "file": "src/alarms.c"
+  },
+  {
+    "directory": ".",
+    "command": "avr-gcc -Wall -mmcu=atmega328 -Os -std=c99 -DF_CPU=8000000UL -Os -c -o obj/pcm_tones.o src/pcm_tones.c",
+    "file": "src/pcm_tones.c"
+  },
+  {
+    "directory": ".",
+    "command": "avr-gcc -Wall -mmcu=atmega328 -Os -std=c99 -DF_CPU=8000000UL -Os -c -o obj/pam8403.o src/pam8403.c",
+    "file": "src/pam8403.c"
+  },
+  {
+    "directory": ".",
+    "command": "avr-gcc -Wall -mmcu=atmega328 -Os -std=c99 -DF_CPU=8000000UL -Os -c -o obj/sleep.o src/sleep.c",
+    "file": "src/sleep.c"
+  },
+  {
+    "directory": ".",
+    "command": "avr-gcc -Wall -mmcu=atmega328 -Os -std=c99 -DF_CPU=8000000UL -Os -c -o obj/tasks.o src/tasks.c",
+    "file": "src/tasks.c"
+  },
+  {
+    "directory": ".",
+    "command": "avr-gcc -Wall -mmcu=atmega328 -Os -std=c99 -DF_CPU=8000000UL -Os -c -o obj/reactor.o src/reactor.c",
+    "file": "src/reactor.c"
+  },
+  {
+    "directory": ".",
+    "command": "avr-gcc -Wall -mmcu=atmega328 -Os -std=c99 -DF_CPU=8000000UL -Os -c -o obj/buttons.o src/buttons.c",
+    "file": "src/buttons.c"
+  },
+  {
+    "directory": ".",
+    "command": "avr-gcc -Wall -mmcu=atmega328 -Os -std=c99 -DF_CPU=8000000UL -Os -c -o obj/view.o src/view.c",
+    "file": "src/view.c"
+  },
+  {
+    "directory": ".",
+    "command": "avr-gcc -Wall -mmcu=atmega328 -Os -std=c99 -DF_CPU=8000000UL -Os -c -o obj/ui.o src/ui.c",
+    "file": "src/ui.c"
+  },
+  {
+    "directory": ".",
+    "command": "avr-gcc -Wall -mmcu=atmega328 -Os -std=c99 -DF_CPU=8000000UL -Os -c -o obj/snd_buzzer.o src/snd_buzzer.c",
+    "file": "src/snd_buzzer.c"
+  },
+  {
+    "directory": ".",
+    "command": "avr-gcc -Wall -mmcu=atmega328 -Os -std=c99 -DF_CPU=8000000UL -Os -c -o obj/Courier_New16.o src/Courier_New16.c",
+    "file": "src/Courier_New16.c"
+  },
+  {
+    "directory": ".",
+    "command": "avr-gcc -Wall -mmcu=atmega328 -Os -std=c99 -DF_CPU=8000000UL -Os -c -o obj/Courier_New24.o src/Courier_New24.c",
+    "file": "src/Courier_New24.c"
+  },
+  {
+    "directory": ".",
+    "command": "avr-gcc -Wall -mmcu=atmega328 -Os -std=c99 -DF_CPU=8000000UL -Os -c -o obj/Courier_New48.o src/Courier_New48.c",
+    "file": "src/Courier_New48.c"
+  }
+]
