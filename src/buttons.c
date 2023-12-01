@@ -14,19 +14,19 @@ buttons_cb_t cb;
 
 char button_to_input(uint8_t button) {
     if (button & (0x01 << 0)) {
-        return 'R';
+        return 'L';
     }
 
     if (button & (0x01 << 1)) {
-        return 'U';
-    }
-
-    if (button & (0x01 << 2)) {
         return 'D';
     }
 
+    if (button & (0x01 << 2)) {
+        return 'U';
+    }
+
     if (button & (0x01 << 3)) {
-        return 'L';
+        return 'R';
     }
 
     return '0';
