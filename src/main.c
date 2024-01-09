@@ -16,7 +16,6 @@
 #include "pam8403.h"
 #include "reactor.h"
 #include "buttons.h"
-#include "sounds.h"
 #include "ui.h"
 
 
@@ -27,7 +26,7 @@
 vdatetime_t last_date = {0};
 vdatetime_t date;
 valarm_t alarms[NUM_ALARMS];
-const unsigned char * volatile lut;
+static const unsigned char * volatile lut;
 volatile ms_t ms_since_last_draw = INT32_MAX;
 volatile ms_t ms_since_last_minute = INT32_MAX;
 char button_queue[BUTTON_QUEUE_SIZE] = {0};
@@ -153,6 +152,23 @@ void tone_done_cb() {
     }
 }
 
+void audio_done_task(ms_t real_ms) {
+    if (pcm_tones_busy()) {
+        reactor_call_later(TASK_AUDIO_DONE, 10);
+        return;
+    }
+
+    printf("Done Playing\n");
+
+    reactor_enable_sleep();
+
+    if (activated_alarms(alarms)) {
+        reactor_call_later(TASK_AUDIO, 3000);
+    } else {
+        pam8403_disable();
+    }
+}
+
 void audio_task(ms_t real_ms) {
     if (! activated_alarms(alarms)) {
         pam8403_disable();
@@ -165,7 +181,15 @@ void audio_task(ms_t real_ms) {
 
     reactor_disable_sleep();
     printf("PLAYING\n");
-    pcm_tones_play(tone_freq, 10000, 255, &tone_done_cb);
+    // pcm_tones_play(tone_freq, 10000, 7, &tone_done_cb);
+    // pcm_tones_play(100000, 10000, 7, &tone_done_cb);
+    // pcm_tones_play(550000, 5000, 7, &tone_done_cb);
+    // pcm_tones_play(261630, 5000, 7, &tone_done_cb);
+    pcm_tones_play(349230, 5000, 7, &tone_done_cb);
+    pcm_tones_play(440000, 5000, 6, &tone_done_cb);
+    pcm_tones_play(523250, 5000, 7, &tone_done_cb);
+    pcm_tones_play(659260, 5000, 7, &tone_done_cb);
+    reactor_call_later(TASK_AUDIO_DONE, 10);
 }
 
 

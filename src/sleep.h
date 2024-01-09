@@ -1,5 +1,5 @@
 #ifndef ASYNC_DELAY_H
-#define ASYNC_DLEAY_H
+#define ASYNC_DELAY_H
 
 #include <stdint.h>
 

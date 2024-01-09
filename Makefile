@@ -16,7 +16,7 @@ BITRATE = 10
 CC=avr-gcc
 CFLAGS=-Wall -mmcu=$(MCU_TARGET) -Os -std=c99
 LFLAGS=-Wall
-CFLAGS += -DF_CPU=8000000UL
+CFLAGS += -DF_CPU=8000000UL --param=min-pagesize=0
 
 # Directories
 BIN = bin
@@ -56,7 +56,6 @@ DEPS = \
 	$(SRC)/epdif.h \
 	$(SRC)/epdpaint.h \
 	$(SRC)/alarms.h \
-	$(SRC)/sounds.h \
 	$(SRC)/pcm_tones.h \
 	$(SRC)/pam8403.h \
 	$(SRC)/sleep.h \
@@ -83,14 +82,17 @@ $(HEX): $(ELF) $(OBJ) $(BIN)
 $(ELF): $(OBJS) $(OBJ)
 	avr-gcc $(CFLAGS) -o $(ELF) -Wl,-Map,$(MAP) $(OBJS)
 
-$(OBJS): $(OBJ)/%.o: $(SRC)/%.c $(DEPS) $(OBJ)
+$(OBJS): $(OBJ)/%.o: $(SRC)/%.c $(DEPS) | $(OBJ)
 	avr-gcc $(CFLAGS) -Os -c -o $@ $<
 
 flash: $(HEX)
-	avrdude -v -c $(PROGRAMMER) -P /dev/tty.usbmodem000960781 -p $(REAL_TARGET) -B $(BITRATE) -V -U flash:w:$(HEX):i
+	# avrdude -v -c $(PROGRAMMER) -P /dev/tty.usbmodem000960781 -p $(REAL_TARGET) -B $(BITRATE) -V -U flash:w:$(HEX):i
+	avrdude -v -c $(PROGRAMMER) -P /dev/ttyACM1 -p $(REAL_TARGET) -V -U flash:w:$(HEX):i
 
 $(BIN) $(OBJ):
 	$(MKDIR_P) $@
+
+.PHONY: all
 
 clean:
 	rm -rf $(BIN)/* $(OBJ)/*

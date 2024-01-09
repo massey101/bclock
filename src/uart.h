@@ -15,9 +15,9 @@
 #include <stdio.h>
 #include <stdint.h>
 
-FILE uart_stdout;
-FILE uart_input;
-FILE uart_io;
+extern FILE uart_stdout;
+extern FILE uart_input;
+extern FILE uart_io;
 
 typedef void (*uart_cb_t)(char input);
 
